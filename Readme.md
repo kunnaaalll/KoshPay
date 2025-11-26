@@ -4,12 +4,7 @@ This is the full KoshPay project: a crypto-first wallet and swap platform with a
 
 ## Get started
 
-1. Install dependencies
-
-   If using a monorepo with separate apps (for example `koshpay-mobile` and `koshpay-backend`):
-
-
-2. Start the services
+1. Install Dependencies Start the services
 
 - Start the backend API (Express + PostgreSQL):
 
