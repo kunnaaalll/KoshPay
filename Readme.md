@@ -15,7 +15,7 @@ This is the full KoshPay project: a crypto-first wallet and swap platform with a
 
   ```
   cd koshpay-backend
-  nom install
+  npm install
   npm run dev
   ```
 
