@@ -31,14 +31,14 @@ Make sure your `.env` files are configured for:
 
 In the Expo CLI output, you'll find options to open the app in a
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Development build](https://docs.expo.dev/develop/development-builds/introduction/)
 - [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
 - [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
 - [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
 
 You can start developing the mobile UI by editing the files inside the **koshpay-mobile/app** directory (file-based routing), and backend logic inside **koshpay-backend/src**.
 
-## Get a fresh project
+## Get A Fresh Project
 
 When you want to reset only the Expo app starter code and keep the backend as-is, from `koshpay-mobile` run:
 
