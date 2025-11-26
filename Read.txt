@@ -1,0 +1,37 @@
+//Database ->
+
+User [{
+    KoshpayID, -> Unique
+    PhoneNumber, -> Unique
+    FirstName,
+    LastName,
+    verificationStatus
+}];
+
+Verify [{
+    KoshpayID, -> Unique
+    KYC Doc -> (PAN, Aadhar, Passport, DL)
+    DOC_Front ->
+    Doc_Back ->
+    Selfie ->
+    verificationStatus: verified, not-verified,
+}]
+
+Transactions [{
+    KoshpayID,
+    TransactionID,
+    MerchantInfo,
+    PayingTo,
+    PayeeName,
+    Amount,
+    CryptoTransactionAddress,
+    CryptoTransactionStatus,
+    CryptoTransactionValue,
+}]
+
+Wallet [{
+    KoshpayID,
+    WalletID,
+    CryptoBalance,
+}]
+
