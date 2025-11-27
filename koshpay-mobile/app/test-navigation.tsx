@@ -48,9 +48,11 @@ export default function TestNavigation() {
       },
     },
     { name: 'Crypto Info Screen', path: '/crypto-details' },
+    { name: 'KYC Basic', path: '/kyc-basic-info' },
     { name: 'KYC Front', path: '/kyc-nid-front' },
     { name: 'KYC Back', path: '/kyc-nid-back' },
     { name: 'Cam Test', path: '/CameraTest' },
+
     // { name: 'Components Screen', path: '/test-components' },
     
   ];

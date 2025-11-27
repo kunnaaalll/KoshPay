@@ -1,8 +1,9 @@
 const express = require("express");
 const axios = require("axios");
 require("dotenv").config();
+const { createUserByNumber, findUserByNumber } = require("../models/User");
 const jwtSecret = process.env.JWT_SECRET;
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 const router = express.Router();
 
 router
@@ -56,21 +57,13 @@ router
       );
 
       if (response.data.status === "approved") {
-
-        // const user = await getUserByPhoneNumber(phoneNumber);
-        // if (!user) {
-        //   const newUser = await createUser(phoneNumber);
-        //   user = newUser;
-        // } else {
-        //   user.lastLogin = new Date();
-        //   await updateUser(user);
-        // }
-
-        // const payload = {userID: user._id, phoneNumber: user.phoneNumber};
-        // const token = jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
-        // return res.json({ token, user, message: "OTP verified successfully" });
-        return res.status(200).json({ message: "OTP verified successfully" });
-
+        let user = await findUserByNumber(phoneNumber);
+        if (!user) {
+          user = await createUserByNumber(phoneNumber);
+        }
+        const payload = { userID: user.id, phoneNumber: user.phonenumber };
+        const token = jwt.sign(payload, jwtSecret, { expiresIn: "365d" });
+        return res.json({ token, user, message: "OTP verified successfully" });
       } else {
         return res.status(401).json({ error: "Invalid OTP" });
       }
@@ -81,4 +74,4 @@ router
     }
   });
 
-  module.exports = router;
+module.exports = router;

@@ -38,7 +38,7 @@ export default function PhoneLoginScreen() {
   setIsLoading(true);
 
   try {
-    const response = await fetch("http://192.168.1.45:3001/auth/send-otp", {
+    const response = await fetch("http://192.168.1.49:3001/auth/send-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ phoneNumber: `+91${phoneNumber}` }),

@@ -23,6 +23,7 @@ import {
   isSmallDevice,
 } from "../../utils/responsive";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 
 const ID_OPTIONS = [
   { label: "Aadhaar", value: "Aadhaar" },
@@ -115,7 +116,8 @@ export default function KYCBasicInfoScreen() {
     return formatted;
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    console.log("handleContinue pressed");
     if (!fullName || !dateOfBirth || !nidNumber || !address || !idType) {
       alert("Please fill all fields");
       return;
@@ -128,8 +130,52 @@ export default function KYCBasicInfoScreen() {
       alert("PAN must be 10 characters");
       return;
     }
-    // TODO: Send to backend
-    router.push("/(auth)/kyc-nid-front");
+      console.log("calling nid-front...");
+    try {
+       console.log("Entered try block...");
+      const token = await SecureStore.getItemAsync("authToken");
+      if (!token) {
+        alert("Authentication error, Please Login Again");
+        return;
+      }
+       console.log("Before API...");
+
+      const [day, month, year] = dateOfBirth.split("/");
+      const isoDate = `${year}-${month}-${day}`;
+
+      const res = await fetch("http://192.168.1.49:3001/api/kyc/basic-info", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fullName,
+          date_of_birth: isoDate,
+          doc_kind: idType,
+          nidNumber,
+          address,
+        }),
+      });
+       console.log("after fetch, status:", res.status);
+
+      const text = await res.text();
+      console.log("nid-front status:", res.status, "body:", text);
+      let data: any = null;
+    try {
+      data = JSON.parse(text);
+    } catch {}
+
+      if (!res.ok) {
+        alert(data.error || "Failed to save KYC info");
+        return;
+      }
+      console.log("basic-info ok, navigating to kyc-nid-front...");
+      router.push({pathname:"/(auth)/kyc-nid-front", params: { doc_kind: idType }});
+    } catch (error) {
+      console.log("basic-info error:", error);
+      alert("An error occurred. Please Try Again :(");
+    }
   };
 
   const isFormValid =

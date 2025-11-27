@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,40 +7,58 @@ import {
   StatusBar,
   Image,
   Alert,
-} from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import { CameraView, Camera } from 'expo-camera';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme } from '../../context/ThemeContext';
-import { scale, verticalScale, moderateScale, scaleFont, isSmallDevice } from '../../utils/responsive';
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "../../context/ThemeContext";
+import {
+  scale,
+  verticalScale,
+  moderateScale,
+  scaleFont,
+  isSmallDevice,
+} from "../../utils/responsive";
+import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import { useLocalSearchParams } from "expo-router";
 
-import { useRouter } from 'expo-router';
-
-export default function KYCNIDFrontScreen() {
+export default function KYCNIDBackScreen() {
   const { isDarkMode, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const docKind = params.doc_kind as string | undefined;
 
   const [photo, setPhoto] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [showCamera, setShowCamera] = useState(false);
 
-  const requestPermissions = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setHasPermission(status === 'granted');
-    return status === 'granted';
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Camera Permission",
+        "Please enable camera access in Settings to take photos."
+      );
+      return false;
+    }
+    return true;
   };
 
   const handleTakePhoto = async () => {
-    const granted = await requestPermissions();
-    if (granted) {
-      setShowCamera(true);
-    } else {
-      Alert.alert(
-        'Camera Permission',
-        'Please enable camera access in Settings to take photos.'
-      );
+    const ok = await requestCameraPermission();
+    if (!ok) return;
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [16, 10],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets.length > 0) {
+        setPhoto(result.assets[0].uri);
+      }
+    } catch {
+      Alert.alert("Error", "Failed to open camera");
     }
   };
 
@@ -52,74 +70,88 @@ export default function KYCNIDFrontScreen() {
         aspect: [16, 10],
         quality: 0.8,
       });
-
-      if (!result.canceled) {
+      if (!result.canceled && result.assets.length > 0) {
         setPhoto(result.assets[0].uri);
       }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to pick image');
+    } catch {
+      Alert.alert("Error", "Failed to pick image");
     }
   };
 
-  const handleRetake = () => {
-    setPhoto(null);
-  };
+  const handleRetake = () => setPhoto(null);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!photo) {
-      Alert.alert('No Photo', 'Please capture your NID front photo');
+      Alert.alert("No Photo", "Please capture your NID Back photo");
       return;
     }
-    // TODO: Upload photo to server
-    router.push('/(auth)/kyc-selfie');
+    try {
+      const token = await SecureStore.getItemAsync("authToken");
+      if (!token) {
+        alert("Authentication error, Please Login Again");
+        return;
+      } 
+
+      const formData = new FormData();
+            formData.append("kycBackImage", {
+              uri: photo,
+              name: "nid-back.jpg",
+              type: "image/jpeg",
+            } as any);
+      
+            const uploadRes = await fetch(
+               "http://192.168.1.49:3001/api/upload/kyc-back-image",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  // no Content-Type here; fetch sets multipart boundary automatically
+                },
+                body: formData,
+              }
+            );
+      
+            const uploadData = await uploadRes.json();
+            if (!uploadRes.ok || !uploadData.imageUrl) {
+              Alert.alert(
+                "Upload error",
+                uploadData.error || "Failed to upload image"
+              );
+              return;
+            }
+      
+            const imageUrl = uploadData.imageUrl;
+
+      const res = await fetch("http://192.168.1.49:3001/api/kyc/nid-back", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imageUrl,
+          doc_kind : docKind,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(
+          data.error || "Failed to save Back ID photo, Please Try Again :("
+        );
+        return;
+      }
+      router.push("/(auth)/kyc-selfie");
+    } catch (error) {
+      alert("An error occurred. Please Try Again :(");
+    }
   };
-
-  if (showCamera) {
-    return (
-      <CameraView
-        style={styles.camera}
-        facing="back"
-      >
-        <View style={[styles.cameraOverlay, { paddingTop: insets.top }]}>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setShowCamera(false)}
-          >
-            <Ionicons name="close" size={32} color="#FFF" />
-          </TouchableOpacity>
-
-          <View style={styles.cameraFrame}>
-            <View style={styles.frameCorner} />
-            <View style={[styles.frameCorner, styles.frameTopRight]} />
-            <View style={[styles.frameCorner, styles.frameBottomLeft]} />
-            <View style={[styles.frameCorner, styles.frameBottomRight]} />
-          </View>
-
-          <Text style={styles.cameraInstruction}>
-            Position the front of your NID within the frame
-          </Text>
-
-          <View style={styles.cameraActions}>
-            <TouchableOpacity
-              style={styles.captureButton}
-              onPress={async () => {
-                // TODO: Implement camera capture
-                setShowCamera(false);
-                Alert.alert('Captured!', 'Photo saved successfully');
-              }}
-            >
-              <View style={styles.captureButtonInner} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </CameraView>
-    );
-  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        barStyle={isDarkMode ? "light-content" : "dark-content"}
         backgroundColor={theme.background}
       />
 
@@ -140,7 +172,7 @@ export default function KYCNIDFrontScreen() {
           <View
             style={[
               styles.progressFill,
-              { backgroundColor: theme.primary, width: '50%' },
+              { backgroundColor: theme.primary, width: "75%" },
             ]}
           />
         </View>
@@ -151,7 +183,12 @@ export default function KYCNIDFrontScreen() {
 
       <View style={styles.content}>
         <View style={styles.iconContainer}>
-          <View style={[styles.iconCircle, { backgroundColor: theme.primary + '20' }]}>
+          <View
+            style={[
+              styles.iconCircle,
+              { backgroundColor: theme.primary + "20" },
+            ]}
+          >
             <Ionicons name="card" size={40} color={theme.primary} />
           </View>
         </View>
@@ -208,19 +245,25 @@ export default function KYCNIDFrontScreen() {
           </Text>
           <View style={styles.guideline}>
             <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-            <Text style={[styles.guidelineText, { color: theme.textSecondary }]}>
+            <Text
+              style={[styles.guidelineText, { color: theme.textSecondary }]}
+            >
               Ensure all text is clearly visible
             </Text>
           </View>
           <View style={styles.guideline}>
             <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-            <Text style={[styles.guidelineText, { color: theme.textSecondary }]}>
+            <Text
+              style={[styles.guidelineText, { color: theme.textSecondary }]}
+            >
               Avoid glare and shadows
             </Text>
           </View>
           <View style={styles.guideline}>
             <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-            <Text style={[styles.guidelineText, { color: theme.textSecondary }]}>
+            <Text
+              style={[styles.guidelineText, { color: theme.textSecondary }]}
+            >
               Capture the entire card within frame
             </Text>
           </View>
@@ -231,7 +274,10 @@ export default function KYCNIDFrontScreen() {
       <View
         style={[
           styles.bottomContainer,
-          { paddingBottom: insets.bottom + 16, backgroundColor: theme.background },
+          {
+            paddingBottom: insets.bottom + 16,
+            backgroundColor: theme.background,
+          },
         ]}
       >
         <TouchableOpacity
@@ -247,7 +293,7 @@ export default function KYCNIDFrontScreen() {
           <Text
             style={[
               styles.continueButtonText,
-              { color: photo ? '#FFF' : theme.textSecondary },
+              { color: photo ? "#FFF" : theme.textSecondary },
             ]}
           >
             Continue
@@ -263,15 +309,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: scale(16),
     paddingBottom: verticalScale(16),
   },
   headerTitle: {
     fontSize: scaleFont(18),
-    fontWeight: '600',
+    fontWeight: "600",
   },
   progressContainer: {
     paddingHorizontal: scale(16),
@@ -279,12 +325,12 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: verticalScale(4),
-    backgroundColor: 'rgba(128,128,128,0.2)',
+    backgroundColor: "rgba(128,128,128,0.2)",
     borderRadius: moderateScale(2),
     marginBottom: verticalScale(8),
   },
   progressFill: {
-    height: '100%',
+    height: "100%",
     borderRadius: moderateScale(2),
   },
   progressText: {
@@ -295,67 +341,67 @@ const styles = StyleSheet.create({
     paddingHorizontal: scale(16),
   },
   iconContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: verticalScale(24),
   },
   iconCircle: {
     width: scale(80),
     height: scale(80),
     borderRadius: scale(40),
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   title: {
     fontSize: scaleFont(24),
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
     marginBottom: verticalScale(8),
   },
   subtitle: {
     fontSize: scaleFont(14),
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: verticalScale(isSmallDevice ? 20 : 32),
     paddingHorizontal: scale(20),
   },
   uploadOptions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: scale(12),
     marginBottom: verticalScale(32),
   },
   uploadButton: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: verticalScale(isSmallDevice ? 24 : 32),
     borderRadius: moderateScale(12),
     borderWidth: 2,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
   },
   uploadButtonText: {
     fontSize: scaleFont(14),
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: verticalScale(8),
   },
   photoPreviewContainer: {
     marginBottom: verticalScale(32),
   },
   photoPreview: {
-    width: '100%',
+    width: "100%",
     height: verticalScale(200),
     borderRadius: moderateScale(12),
     marginBottom: verticalScale(16),
   },
   retakeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: verticalScale(12),
     borderRadius: moderateScale(10),
     gap: scale(8),
   },
   retakeText: {
     fontSize: scaleFont(16),
-    fontWeight: '600',
+    fontWeight: "600",
   },
   guidelinesBox: {
     padding: scale(16),
@@ -363,12 +409,12 @@ const styles = StyleSheet.create({
   },
   guidelinesTitle: {
     fontSize: scaleFont(16),
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: verticalScale(12),
   },
   guideline: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: verticalScale(8),
     gap: scale(8),
   },
@@ -382,11 +428,11 @@ const styles = StyleSheet.create({
   continueButton: {
     paddingVertical: verticalScale(16),
     borderRadius: moderateScale(12),
-    alignItems: 'center',
+    alignItems: "center",
   },
   continueButtonText: {
     fontSize: scaleFont(16),
-    fontWeight: '700',
+    fontWeight: "700",
   },
   // Camera styles
   camera: {
@@ -394,24 +440,24 @@ const styles = StyleSheet.create({
   },
   cameraOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   closeButton: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     margin: scale(20),
   },
   cameraFrame: {
     flex: 1,
     margin: scale(40),
-    position: 'relative',
+    position: "relative",
   },
   frameCorner: {
-    position: 'absolute',
+    position: "absolute",
     width: scale(40),
     height: scale(40),
     borderTopWidth: scale(4),
     borderLeftWidth: scale(4),
-    borderColor: '#FFF',
+    borderColor: "#FFF",
     top: 0,
     left: 0,
   },
@@ -438,28 +484,28 @@ const styles = StyleSheet.create({
     borderRightWidth: scale(4),
   },
   cameraInstruction: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: scaleFont(16),
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: verticalScale(40),
     paddingHorizontal: scale(40),
   },
   cameraActions: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: verticalScale(40),
   },
   captureButton: {
     width: scale(80),
     height: scale(80),
     borderRadius: scale(40),
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   captureButtonInner: {
     width: scale(64),
     height: scale(64),
     borderRadius: scale(32),
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
   },
 });

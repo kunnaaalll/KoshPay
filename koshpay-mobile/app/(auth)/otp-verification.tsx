@@ -22,6 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import * as SecureStore from "expo-secure-store";
 
 const AnimatedOTPInput = ({ digit, isActive, isFilled }: any) => {
   const { theme } = useTheme();
@@ -134,15 +135,23 @@ export default function OTPVerificationScreen() {
     }
     setIsLoading(true);
     try {
-      const response = await fetch("http://192.168.1.45:3001/auth/verify-otp", {
+      const response = await fetch("http://192.168.1.49:3001/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phoneNumber: phone, code }),
       });
+
       const data = await response.json();
       setIsLoading(false);
+
       if (response.ok) {
-        Alert.alert("Success", "OTP verified!");
+        if (!data.token || !data.user) {
+          Alert.alert("Error", "Invalid response from server");
+          return;
+        }
+        await SecureStore.setItemAsync("authToken", String(data.token));
+        await SecureStore.setItemAsync("userId", String(data.user.id));
+
         router.replace("/kyc-basic-info");
       } else {
         Alert.alert("Error", data.error || "Invalid OTP");
@@ -300,14 +309,14 @@ const styles = StyleSheet.create({
   },
   otpDigit: { fontSize: 24, fontWeight: "700" },
   activeIndicator: {
-  position: 'absolute',
-  bottom: 8,     // Or verticalScale(8)
-  left: '15%',   // Use percentage to adapt to box width
-  right: '15%',
-  height: 3,     // Or verticalScale(3)
-  borderRadius: 2, // Or moderateScale(2)
-  backgroundColor: '#356AE6', // Your theme.primary or desired color
-},
+    position: "absolute",
+    bottom: 8, // Or verticalScale(8)
+    left: "15%", // Use percentage to adapt to box width
+    right: "15%",
+    height: 3, // Or verticalScale(3)
+    borderRadius: 2, // Or moderateScale(2)
+    backgroundColor: "#356AE6", // Your theme.primary or desired color
+  },
 
   resendContainer: { alignItems: "center", marginVertical: 20 },
   resendText: { fontSize: 16, fontWeight: "600" },

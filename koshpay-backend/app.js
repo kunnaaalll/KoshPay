@@ -2,6 +2,8 @@ const express = require("express");
 const { initDb } = require('./models/initDb');
 require("dotenv").config();
 const authRoutes = require('./routes/authRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const kycRoutes = require('./routes/kycRoutes');
 const cors = require('cors');
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -14,6 +16,8 @@ app.use(express.json());
 
 //routes
 app.use('/auth', authRoutes);
+app.use('/api', kycRoutes);
+app.use('/api', uploadRoutes);
 
 
 //initialize database and start server
