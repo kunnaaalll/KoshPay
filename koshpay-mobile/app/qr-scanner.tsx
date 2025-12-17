@@ -34,16 +34,62 @@ export default function QRScannerScreen() {
     })();
   }, []);
 
+  const parseUPI = (data: string) => {
+    // Basic UPI parser
+    // Format: upi://pay?pa=address@upi&pn=Name&...
+    if (!data.startsWith('upi://')) return null;
+    
+    try {
+      // Create a dummy URL base because standard URL requires protocol/host
+      // actually upi:// is a valid protocol so we might just parse it manually 
+      // or use text manipulation if URL is strict about protocols in RN environment
+      
+      const queryParams = data.split('?')[1];
+      if (!queryParams) return null;
+
+      const params = queryParams.split('&').reduce((acc, current) => {
+        const [key, value] = current.split('=');
+        if (key && value) {
+          acc[key] = decodeURIComponent(value);
+        }
+        return acc;
+      }, {} as any);
+
+      return {
+        name: params['pn'] || 'Unknown Merchant',
+        vpa: params['pa'],
+        bankingName: params['pn'] // often same as display name
+      };
+    } catch (e) {
+      return null;
+    }
+  };
+
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
     setScanned(true);
+
+    const upiData = parseUPI(data);
     
-    router.push({
-      pathname: '/payment',
-      params: {
-        name: 'Scanned User',
-        id: data,
-      },
-    });
+    if (upiData && upiData.vpa) {
+      router.push({
+        pathname: '/payment',
+        params: {
+          name: upiData.name,
+          bankingName: upiData.bankingName,
+          koshpayId: upiData.vpa, // treating VPA as the ID ref
+          phone: '', // Phone might not be in UPI string
+        },
+      });
+    } else {
+      // Fallback for non-UPI or direct KoshPay IDs
+      router.push({
+        pathname: '/payment',
+        params: {
+          name: 'Scanned User',
+          koshpayId: data,
+        },
+      });
+    }
   };
 
   const handleGalleryUpload = async () => {

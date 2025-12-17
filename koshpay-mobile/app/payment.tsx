@@ -10,6 +10,7 @@ import {
   Image,
   ImageSourcePropType,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -22,15 +23,22 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { scale, verticalScale, moderateScale, scaleFont, isSmallDevice } from '../utils/responsive';
 import { useRouter, useLocalSearchParams } from "expo-router";
-
-interface CryptoOption {
-  id: string;
-  name: string;
-  symbol: string;
-  icon: ImageSourcePropType;
-  iconColor: string;
-  priceInr: number;
-}
+import { useWallet, Asset } from "../context/WalletContext";
+import * as Linking from 'expo-linking';
+import { 
+  generateDappKeypair, 
+  buildConnectUrl, 
+  decryptConnectResponse, 
+  encryptPayload, 
+  buildSignTransactionUrl,
+  decryptPayload,
+  PhantomSession,
+  getStoredPhantomSession,
+  setStoredPhantomSession,
+  buildSignAndSendUrl
+} from '../utils/phantom';
+import { Connection, SystemProgram, Transaction, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import bs58 from 'bs58';
 
 interface WalletOption {
   id: string;
@@ -42,6 +50,7 @@ interface WalletOption {
 
 export default function PaymentScreen() {
   const { isDarkMode, theme } = useTheme();
+  const { assets } = useWallet();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -49,55 +58,18 @@ export default function PaymentScreen() {
   const recipient = {
     name: (params.name as string) || "SANGEETA ARVIND PARMAR",
     bankingName: (params.bankingName as string) || "SANGEETA ARVIND PAR...",
-    phone: (params.phone as string) || "+91 86898 13378",
+    phone: (params.phone as string) || "",
     koshpayId: (params.koshpayId as string) || "kparmar2911",
   };
 
   const [amount, setAmount] = useState("");
   const [showCryptoModal, setShowCryptoModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
-  const [selectedCrypto, setSelectedCrypto] = useState<CryptoOption | null>(null);
+  const [selectedCrypto, setSelectedCrypto] = useState<Asset | null>(null);
   const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null);
 
-  const cryptoOptions: CryptoOption[] = [
-    {
-      id: "1",
-      name: "Bitcoin",
-      symbol: "BTC",
-      icon: require("../assets/images/crypto/btc.png"),
-      iconColor: "#F7931A",
-      priceInr: 9135000,
-    },
-    {
-      id: "2",
-      name: "Solana",
-      symbol: "SOL",
-      icon: require("../assets/images/crypto/sol.png"),
-      iconColor: "#14F195",
-      priceInr: 15420,
-    },
-    {
-      id: "3",
-      name: "Ethereum",
-      symbol: "ETH",
-      icon: require("../assets/images/crypto/eth.png"),
-      iconColor: "#627EEA",
-      priceInr: 318500,
-    },
-  ];
+  // Removed static walletOptions, now defined dynamically
 
-  const walletOptions: WalletOption[] = [
-    {
-      id: "1",
-      name: "KoshPay Wallet",
-      type: "koshpay",
-      balance: 0.0234,
-      icon: "wallet",
-    },
-    { id: "2", name: "Phantom", type: "external", icon: "apps" },
-    { id: "3", name: "Trust Wallet", type: "external", icon: "apps" },
-    { id: "4", name: "MetaMask", type: "external", icon: "apps" },
-  ];
 
   // Blinking Cursor Component
   const BlinkingCursor = () => {
@@ -159,7 +131,270 @@ export default function PaymentScreen() {
     setShowWalletModal(true);
   };
 
-  const handleWalletSelectionAndPay = (wallet: WalletOption) => {
+  // State for Phantom Session
+  const [phantomSession, setPhantomSession] = useState<PhantomSession | null>(getStoredPhantomSession());
+  const [dappKeyPair] = useState(generateDappKeypair());
+  
+  // Loading State
+  const [isLoading, setIsLoading] = useState(false);
+
+  const walletOptions: WalletOption[] = [
+    {
+      id: "1",
+      name: "KoshPay Wallet",
+      type: "koshpay",
+      balance: selectedCrypto ? selectedCrypto.balance : 0,
+      icon: "wallet",
+    },
+    { 
+      id: "2", 
+      name: phantomSession ? `Phantom (${phantomSession.walletPublicKey?.slice(0,4)}...${phantomSession.walletPublicKey?.slice(-4)})` : "Phantom", 
+      type: "external", 
+      icon: "wallet-outline" 
+    }, 
+    { id: "3", name: "Solflare", type: "external", icon: "flash" },
+    { id: "4", name: "Backpack", type: "external", icon: "briefcase" },
+  ];
+
+  // Helper to perform the actual transaction
+  const performSolanaPayment = async (session: PhantomSession, currentAmount: string, currentCrypto: Asset) => {
+      try {
+           setIsLoading(true);
+           console.log("=== STARTING PAYMENT FLOW ===");
+           console.log(`Amount: ${currentAmount}, Crypto: ${currentCrypto.symbol}`);
+
+           if (!session || !session.session) {
+               throw new Error("Invalid Session: Please reconnect Phantom.");
+           }
+
+           // Explicitly name this connection to avoid scope conflicts if any
+           const paymentConnection = new Connection('https://api.devnet.solana.com', 'confirmed');
+           console.log("Connected to Solana Devnet");
+
+           // 1. Calculate Amounts
+           const RECIPIENT_PUBKEY = new PublicKey("4mv5hDBDKJT7dwd9DsKqRQdGewkShhUmk5AP8arA484k"); 
+           
+           const amountInr = parseFloat(currentAmount);
+           const cryptoAmount = amountInr / currentCrypto.priceInr;
+           const lamports = Math.floor(cryptoAmount * LAMPORTS_PER_SOL);
+
+           console.log("Calculated Lamports:", lamports);
+
+           if (lamports <= 0) {
+               throw new Error("Invalid amount calculated (0 or negative).");
+           }
+
+           // 2. Balance Check
+           // Use the WALLET Key, not the Encryption Key
+           const userWallet = new PublicKey(session.walletPublicKey!); 
+           
+           try {
+               const balance = await paymentConnection.getBalance(userWallet);
+               console.log(`Wallet Balance (${session.walletPublicKey}): ${balance} lamports`);
+               
+               if (balance < lamports + 5000) {
+                   Alert.alert("Caution", `You may have insufficient funds on Devnet.\nBalance: ${(balance/LAMPORTS_PER_SOL).toFixed(5)} SOL\nNeeded: ~${((lamports+5000)/LAMPORTS_PER_SOL).toFixed(5)} SOL`);
+               }
+           } catch (netErr) {
+               console.warn("Could not fetch balance:", netErr);
+               // Don't throw, just warn
+           }
+
+           // 3. Construct Transaction
+           const transaction = new Transaction().add(
+               SystemProgram.transfer({
+                   fromPubkey: userWallet, 
+                   toPubkey: RECIPIENT_PUBKEY,
+                   lamports: lamports, 
+               })
+           );
+           
+           console.log("Fetching Blockhash (finalized)...");
+           const blockhashObj = await paymentConnection.getLatestBlockhash('finalized');
+           transaction.recentBlockhash = blockhashObj.blockhash;
+           transaction.feePayer = userWallet;
+           console.log("Blockhash fetched:", blockhashObj.blockhash);
+
+           // 4. Serialize
+           const serializedTransaction = transaction.serialize({
+               requireAllSignatures: false,
+               verifySignatures: false
+           });
+
+           // 5. Encrypt Payload
+           const payload = {
+               transaction: bs58.encode(serializedTransaction),
+               session: session.session, 
+           };
+
+           const { nonce, payload: encryptedPayload } = encryptPayload(
+               payload, 
+               session.sharedSecret!
+           );
+
+           // 6. Init Deep Link
+           const redirectLink = Linking.createURL('/payment'); // Map to existing route
+           console.log("Redirect Link:", redirectLink);
+
+           const url = buildSignTransactionUrl(
+               session.appPublicKey, 
+               nonce,
+               encryptedPayload,
+               session.session!,
+               redirectLink
+           );
+
+           console.log("Opening Phantom URL...");
+           await Linking.openURL(url);
+           // NOTE: Keep loading true. We rely on useEffect logic to continue.
+
+      } catch (error: any) {
+          console.error("FATAL PAYMENT ERROR:", error);
+          Alert.alert("Payment Error", error.message || "Unknown Failure");
+          setIsLoading(false);
+      }
+  };
+
+  // Handle Deep Links
+  useEffect(() => {
+    const handleDeepLink = async ({ url }: { url: string }) => {
+      console.log("Deep Link Received:", url);
+      const params = new URL(url).searchParams;
+
+      // Check if it's a Connect Response (has phantom_encryption_public_key)
+      if (params.get('phantom_encryption_public_key')) {
+          const phantomEncryptionKey = params.get('phantom_encryption_public_key');
+          const nonce = params.get('nonce');
+          const data = params.get('data');
+
+          if (phantomEncryptionKey && nonce && data) {
+            try {
+              const { payload, sharedSecret } = decryptConnectResponse(
+                phantomEncryptionKey,
+                nonce,
+                data,
+                dappKeyPair.secretKey
+              );
+              
+              const newSession: PhantomSession = {
+                appPublicKey: dappKeyPair.publicKey,
+                appSecretKey: dappKeyPair.secretKey,
+                sharedSecret,
+                phantomPublicKey: phantomEncryptionKey, 
+                walletPublicKey: payload.public_key,    
+                session: payload.session,
+              };
+
+              setPhantomSession(newSession);
+              setStoredPhantomSession(newSession); 
+
+              // Note: We don't alert "Connected" anymore if it's integrated smoothly, 
+              // instead we might just proceed or show a toast.
+              // For now simpler:
+              // Alert.alert("Connected", "Wallet connected!");
+            } catch (e) {
+              console.error(e);
+              Alert.alert("Error", "Failed to connect to Phantom");
+            }
+          }
+      }
+
+      // Check if it's a SignTransaction Response (has nonce, data, but NO phantom_encryption_public_key)
+      else if (params.get('nonce') && params.get('data')) {
+        // We are back from Phantom!
+        console.log("SignTransaction response detected. Resuming flow...");
+        setIsLoading(true); // Force loading state in case of app reload
+        
+        const nonce = params.get('nonce');
+        const data = params.get('data');
+        const errorCode = params.get('errorCode');
+        const errorMessage = params.get('errorMessage');
+
+        if (errorCode) {
+             console.error("Phantom Error:", errorCode, errorMessage);
+             Alert.alert("Payment Failed", errorMessage || `Error Code: ${errorCode}`);
+             setIsLoading(false);
+             return;
+        }
+
+        if (nonce && data && phantomSession) {
+            try {
+                // Decrypt
+                const decryptedData = decryptPayload(
+                    data, 
+                    nonce, 
+                    phantomSession.sharedSecret!
+                );
+                
+                const signedTransactionStr = decryptedData.transaction;
+                
+                // Submit
+                // Submit with Retry Strategy
+                console.log("Submitting transaction...");
+                const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
+                const signedTransaction = bs58.decode(signedTransactionStr);
+                
+                let signature = '';
+                let attempts = 0;
+                const maxRetries = 3;
+
+                while (attempts < maxRetries) {
+                    try {
+                        attempts++;
+                        console.log(`Submission Attempt ${attempts}...`);
+                        signature = await connection.sendRawTransaction(signedTransaction, {
+                            skipPreflight: false,
+                            preflightCommitment: 'confirmed'
+                        });
+                        break; // Success!
+                    } catch (submitErr) {
+                        console.warn(`Attempt ${attempts} failed:`, submitErr);
+                        if (attempts === maxRetries) throw submitErr; // Throw on last failure
+                        // Wait 1s before retry
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+                
+                console.log("Transaction Sent! Signature:", signature);
+                
+                // Confirm
+                const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+                
+                setIsLoading(false); // Done!
+
+                if (confirmation.value.err) {
+                    Alert.alert("Error", "Transaction failed on chain");
+                } else {
+                    router.push({
+                        pathname: '/payment-success',
+                        params: {
+                            amount: amount, // Pass full input string (e.g. "500")
+                            symbol: 'INR',  // Display INR
+                            txSignature: signature,
+                            recipientName: recipient.name // Pass recipient name
+                        }
+                    });
+                }
+
+            } catch (err: any) {
+                console.error("Submission Error:", err);
+                Alert.alert("Error", "Failed to submit: " + (err.message || "Network Error"));
+                setIsLoading(false);
+            }
+        } else {
+             // User might have cancelled or weird state
+             setIsLoading(false);
+        }
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    return () => {
+      subscription.remove();
+    };
+  }, [dappKeyPair, amount, selectedCrypto, phantomSession]);
+
+  const handleWalletSelectionAndPay = async (wallet: WalletOption) => {
     setSelectedWallet(wallet);
     setShowWalletModal(false);
 
@@ -168,8 +403,42 @@ export default function PaymentScreen() {
       return;
     }
 
-    const cryptoAmount = calculateCryptoAmount();
+    // Logic for Phantom
+    if (wallet.name.includes("Phantom")) { // Check purely string match as we modified name
+       try {
+           if (!phantomSession) {
+               // 1. Connect first
+               const redirectLink = Linking.createURL('/payment'); // Map to existing route
+               const url = buildConnectUrl(dappKeyPair.publicKey, redirectLink);
+               try {
+                   await Linking.openURL(url);
+               } catch (err) {
+                   Alert.alert("Error", "Phantom Wallet not installed");
+               }
+               // We return here. The 'onConnect' handler in useEffect will trigger performSolanaPayment
+               // Actually we need the user to click "Pay" again after connecting for security/UX flow,
+               // or we can auto-trigger. The user said: "once it is done it should have the page wallet connected... and then... loading thing"
+               // So let's just Connect first.
+               return; 
+           }
 
+           // 2. If already connected, pay directly
+           if (selectedCrypto && amount) {
+               performSolanaPayment(phantomSession, amount, selectedCrypto);
+           } else {
+               Alert.alert("Error", "Please select crypto and enter amount");
+           }
+
+       } catch (error) {
+           console.error(error);
+           Alert.alert("Error", "Payment initiation failed");
+           setIsLoading(false);
+       }
+       return;
+    }
+
+    // ... KoshPay Wallet logic ...
+    const cryptoAmount = calculateCryptoAmount();
     router.push({
       pathname: "/payment-confirmation",
       params: {
@@ -177,8 +446,7 @@ export default function PaymentScreen() {
         inrAmount: amount,
         crypto: selectedCrypto.symbol,
         recipientName: recipient.name,
-        walletAddress: "0x" + Math.random().toString(36).substr(2, 9),
-        cryptoPrice: selectedCrypto.priceInr.toString(),
+        // ... params
         wallet: wallet.name,
         walletType: wallet.type,
       },
@@ -225,9 +493,11 @@ export default function PaymentScreen() {
               Banking name: {recipient.bankingName}
             </Text>
           </View>
-          <Text style={[styles.phone, { color: theme.textSecondary }]}>
-            {recipient.phone}
-          </Text>
+          {recipient.phone ? (
+            <Text style={[styles.phone, { color: theme.textSecondary }]}>
+              {recipient.phone}
+            </Text>
+          ) : null}
         </View>
 
         {/* Choose Crypto Button */}
@@ -426,7 +696,7 @@ export default function PaymentScreen() {
             <Text style={[styles.modalTitle, { color: theme.text }]}>
               Choose Crypto Currency
             </Text>
-            {cryptoOptions.map((crypto) => (
+            {assets.map((crypto) => (
               <TouchableOpacity
                 key={crypto.id}
                 style={styles.cryptoOption}
@@ -515,6 +785,21 @@ export default function PaymentScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+            <View style={[styles.loadingContainer, { backgroundColor: theme.card }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.text }]}>
+                    Processing Payment...
+                </Text>
+                <Text style={[styles.loadingSubText, { color: theme.textSecondary }]}>
+                    Please check your Phantom wallet to approve.
+                </Text>
+            </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -570,6 +855,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  loadingContainer: {
+    padding: scale(20),
+    borderRadius: moderateScale(16),
+    alignItems: 'center',
+    width: '80%',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: verticalScale(16),
+    fontSize: scaleFont(18),
+    fontWeight: '600',
+  },
+  loadingSubText: {
+      marginTop: verticalScale(8),
+      fontSize: scaleFont(14),
+      textAlign: 'center',
   },
   rupeeSymbol: { 
     fontSize: scaleFont(40), 

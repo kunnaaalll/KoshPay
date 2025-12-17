@@ -15,6 +15,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { useRouter } from 'expo-router';
 import { scale, verticalScale, moderateScale, scaleFont, isSmallDevice } from '../utils/responsive';
+import { useWallet, Asset } from "../context/WalletContext";
+
 
 type CryptoOption = {
   id: string;
@@ -27,40 +29,14 @@ type CryptoOption = {
 
 export default function SendCryptoScreen() {
   const { isDarkMode, theme } = useTheme();
+  const { assets } = useWallet();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const [selectedCrypto, setSelectedCrypto] = useState<CryptoOption | null>(null);
+  const [selectedCrypto, setSelectedCrypto] = useState<Asset | null>(null);
   const [amount, setAmount] = useState('');
   const [recipientAddress, setRecipientAddress] = useState('');
   const [recipientName, setRecipientName] = useState('');
-
-  const cryptoOptions: CryptoOption[] = [
-    {
-      id: '1',
-      name: 'Bitcoin',
-      symbol: 'BTC',
-      balance: 0.0234,
-      priceInr: 9135000,
-      icon: require('../assets/images/crypto/btc.png'),
-    },
-    {
-      id: '2',
-      name: 'Solana',
-      symbol: 'SOL',
-      balance: 12.5,
-      priceInr: 15420,
-      icon: require('../assets/images/crypto/sol.png'),
-    },
-    {
-      id: '3',
-      name: 'Ethereum',
-      symbol: 'ETH',
-      balance: 0.85,
-      priceInr: 318500,
-      icon: require('../assets/images/crypto/eth.png'),
-    },
-  ];
 
   const calculateInrValue = () => {
     if (!selectedCrypto || !amount) return 0;
@@ -136,7 +112,7 @@ export default function SendCryptoScreen() {
           style={styles.cryptoScroll}
           contentContainerStyle={styles.cryptoScrollContent}
         >
-          {cryptoOptions.map((crypto) => (
+          {assets.map((crypto) => (
             <TouchableOpacity
               key={crypto.id}
               style={[

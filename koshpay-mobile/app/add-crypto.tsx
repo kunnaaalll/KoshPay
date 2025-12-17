@@ -17,52 +17,20 @@ import { useTheme } from "../context/ThemeContext";
 import { useRouter } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import QRCode from "react-native-qrcode-svg";
-type CryptoOption = {
-  id: string;
-  name: string;
-  symbol: string;
-  network: string;
-  icon: ImageSourcePropType;
-  color: string;
-};
+
 import { scale, verticalScale, moderateScale, scaleFont, isSmallDevice } from '../utils/responsive';
+import { useWallet, Asset } from "../context/WalletContext";
 
 export default function AddCryptoScreen() {
   const { isDarkMode, theme } = useTheme();
+  const { assets } = useWallet();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const [selectedCrypto, setSelectedCrypto] = useState<CryptoOption | null>(
+  const [selectedCrypto, setSelectedCrypto] = useState<Asset | null>(
     null
   );
   const [copied, setCopied] = useState(false);
-
-  const cryptoOptions: CryptoOption[] = [
-    {
-      id: "1",
-      name: "Solana",
-      symbol: "SOL",
-      network: "Solana Mainnet",
-      icon: require("../assets/images/crypto/sol.png"),
-      color: "#14F195",
-    },
-    {
-      id: "2",
-      name: "Bitcoin",
-      symbol: "BTC",
-      network: "Bitcoin Network",
-      icon: require("../assets/images/crypto/btc.png"),
-      color: "#F7931A",
-    },
-    {
-      id: "3",
-      name: "Ethereum",
-      symbol: "ETH",
-      network: "Ethereum Mainnet",
-      icon: require("../assets/images/crypto/eth.png"),
-      color: "#627EEA",
-    },
-  ];
 
   // Mock wallet address - replace with actual from backend
   const walletAddress = selectedCrypto
@@ -127,7 +95,7 @@ export default function AddCryptoScreen() {
               Select Cryptocurrency
             </Text>
 
-            {cryptoOptions.map((crypto) => (
+            {assets.map((crypto) => (
               <TouchableOpacity
                 key={crypto.id}
                 style={[styles.cryptoCard, { backgroundColor: theme.card }]}
@@ -156,7 +124,7 @@ export default function AddCryptoScreen() {
                         { color: theme.textSecondary },
                       ]}
                     >
-                      {crypto.network}
+                      {crypto.symbol} Network
                     </Text>
                   </View>
                 </View>
@@ -198,7 +166,7 @@ export default function AddCryptoScreen() {
                       { color: theme.textSecondary },
                     ]}
                   >
-                    {selectedCrypto.network}
+                    {selectedCrypto.symbol} Network
                   </Text>
                 </View>
               </View>

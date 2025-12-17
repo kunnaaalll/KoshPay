@@ -78,7 +78,7 @@ export default function PaymentConfirmationScreen() {
     try {
       setIsVerifying(true);
       const result = await LocalAuthentication.authenticateAsync({
-        reason: "Verify your identity to confirm payment",
+        promptMessage: "Verify your identity to confirm payment",
         fallbackLabel: "Use PIN instead",
         disableDeviceFallback: false,
       });
@@ -204,14 +204,14 @@ export default function PaymentConfirmationScreen() {
           <View style={styles.detailRow}>
             <View>
               <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-                Network Fee
+                Network Fee (1%)
               </Text>
               <Text style={[styles.feeNote, { color: theme.textSecondary }]}>
-                1% Platform Commission + Gas
+                0.5% Portfolio • 0.5% Liquidity
               </Text>
             </View>
             <Text style={[styles.feeValue, { color: theme.textSecondary }]}>
-              {(parseFloat(amount) * 0.01 + 0.00005).toFixed(8)} {crypto}
+              {(parseFloat(amount) * 0.01).toFixed(8)} {crypto}
             </Text>
           </View>
 
@@ -223,7 +223,7 @@ export default function PaymentConfirmationScreen() {
             </Text>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={[styles.totalValue, { color: theme.primary }]}>
-                {(parseFloat(amount) + parseFloat(amount) * 0.01 + 0.00005).toFixed(8)}
+                {(parseFloat(amount) * 1.01).toFixed(8)}
               </Text>
               <Text style={[styles.totalSymbol, { color: theme.textSecondary }]}>
                 {crypto}

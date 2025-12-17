@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { useRouter } from "expo-router";
 import { scale, verticalScale, moderateScale, scaleFont, isSmallDevice } from '../../utils/responsive';
+import { useWallet } from "../../context/WalletContext";
+
 
 
 interface CryptoAsset {
@@ -41,101 +43,16 @@ interface Transaction {
 
 export default function WalletScreen() {
   const { isDarkMode, theme } = useTheme();
+  const { assets, totalBalanceInr, transactions } = useWallet();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  // Crypto Holdings
-  const [cryptoAssets] = useState<CryptoAsset[]>([
-    {
-      id: "1",
-      name: "Bitcoin",
-      symbol: "BTC",
-      balance: 0.0234,
-      priceInr: 9135000,
-      icon: require("../../assets/images/crypto/btc.png"),
-      change24h: -1.42,
-    },
-    {
-      id: "2",
-      name: "Solana",
-      symbol: "SOL",
-      balance: 12.5,
-      priceInr: 15420,
-      icon: require("../../assets/images/crypto/sol.png"),
-      change24h: -5.23,
-    },
-    {
-      id: "3",
-      name: "Ethereum",
-      symbol: "ETH",
-      balance: 0.85,
-      priceInr: 318500,
-      icon: require("../../assets/images/crypto/eth.png"),
-      change24h: -2.73,
-    },
-    // {
-    //   id: '4',
-    //   name: 'KPLT',
-    //   symbol: 'kLP',
-    //   balance: 100,
-    //   priceInr: 10000,
-    //   icon: require('../../assets/images/crypto/klp.png'),
-    //   change24h: +8.80,
-    // },
-  ]);
+  // Filter for "Payments Made" (Sent) only, as requested
+  const recentPayments = transactions
+    .filter(tx => tx.type === 'PAYMENT')
+    .slice(0, 3); // Show top 3
 
-  // Recent Transactions
-  const [transactions] = useState<Transaction[]>([
-    {
-      id: "1",
-      type: "receive",
-      crypto: "BTC",
-      amount: 0.0034,
-      priceInr: 31059,
-      date: "Today",
-      time: "2:30 PM",
-      sender: "Priya Sharma",
-      address: "0x742d...3f4a",
-    },
-    {
-      id: "2",
-      type: "send",
-      crypto: "SOL",
-      amount: 2.5,
-      priceInr: 38550,
-      date: "Yesterday",
-      time: "4:15 PM",
-      recipient: "Amit Patel",
-      address: "0x8b3c...9e2d",
-    },
-    {
-      id: "3",
-      type: "receive",
-      crypto: "ETH",
-      amount: 0.15,
-      priceInr: 47775,
-      date: "Nov 14",
-      time: "11:20 AM",
-      sender: "Raj Kumar",
-      address: "0x5f9a...7c1b",
-    },
-    {
-      id: "4",
-      type: "send",
-      crypto: "BTC",
-      amount: 0.0012,
-      priceInr: 10962,
-      date: "Nov 13",
-      time: "6:45 PM",
-      recipient: "Sangeeta Parmar",
-      address: "0x2d8e...4a9f",
-    },
-  ]);
 
-  // Calculate total balance in INR
-  const totalBalanceInr = cryptoAssets.reduce((sum, asset) => {
-    return sum + asset.balance * asset.priceInr;
-  }, 0);
 
   // const getCryptoIcon = (symbol: string) => {
   //   const iconMap: { [key: string]: any } = {
@@ -211,7 +128,7 @@ export default function WalletScreen() {
             Your Assets
           </Text>
 
-          {cryptoAssets.map((asset) => {
+          {assets.map((asset) => {
             const valueInr = asset.balance * asset.priceInr;
             return (
               <TouchableOpacity
@@ -275,11 +192,11 @@ export default function WalletScreen() {
                   <Text
                     style={[
                       styles.assetChange,
-                      { color: asset.change24h >= 0 ? "#4CAF50" : "#F44336" },
+                      { color: (asset.change24h || 0) >= 0 ? "#4CAF50" : "#F44336" },
                     ]}
                   >
-                    {asset.change24h >= 0 ? "+" : ""}
-                    {asset.change24h.toFixed(2)}%
+                    {(asset.change24h || 0) >= 0 ? "+" : ""}
+                    {(asset.change24h || 0).toFixed(2)}%
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -303,7 +220,11 @@ export default function WalletScreen() {
             </TouchableOpacity>
           </View>
 
-          {transactions.map((transaction) => (
+          {recentPayments.map((transaction) => {
+             // Find asset for icon
+             const asset = assets.find(a => a.symbol === transaction.symbol);
+
+             return (
             <TouchableOpacity
               key={transaction.id}
               style={[styles.transactionCard, { backgroundColor: theme.card }]}
@@ -317,13 +238,7 @@ export default function WalletScreen() {
               <View style={styles.transactionLeft}>
                 <View style={styles.iconContainer}>
                   <Image
-                    source={
-                      transaction.crypto === "BTC"
-                        ? require("../../assets/images/crypto/btc.png")
-                        : transaction.crypto === "SOL"
-                        ? require("../../assets/images/crypto/sol.png")
-                        : require("../../assets/images/crypto/eth.png")
-                    }
+                    source={asset?.icon || require('../../assets/images/icon.png')}
                     style={styles.transactionCryptoIcon}
                   />
                   <View
@@ -331,18 +246,12 @@ export default function WalletScreen() {
                       styles.typeIndicator,
                       {
                         backgroundColor:
-                          transaction.type === "receive"
-                            ? "#4CAF50"
-                            : "#FF3B30",
+                           "#FF3B30",
                       },
                     ]}
                   >
                     <Ionicons
-                      name={
-                        transaction.type === "receive"
-                          ? "arrow-down"
-                          : "arrow-up"
-                      }
+                      name="arrow-up"
                       size={12}
                       color="#FFF"
                     />
@@ -351,7 +260,7 @@ export default function WalletScreen() {
 
                 <View style={styles.transactionInfo}>
                   <Text style={[styles.transactionType, { color: theme.text }]}>
-                    {transaction.type === "receive" ? "Received" : "Sent"}
+                    Sent {transaction.symbol}
                   </Text>
                   <Text
                     style={[
@@ -360,10 +269,8 @@ export default function WalletScreen() {
                     ]}
                     numberOfLines={1}
                   >
-                    {transaction.recipient ||
-                      transaction.sender ||
-                      "External Wallet"}{" "}
-                    • {transaction.date}, {transaction.time || ""}
+                    {transaction.recipient || "External Wallet"}{" "}
+                    • {transaction.timestamp.toLocaleDateString()}
                   </Text>
                 </View>
               </View>
@@ -373,13 +280,12 @@ export default function WalletScreen() {
                   style={[
                     styles.transactionAmount,
                     {
-                      color:
-                        transaction.type === "receive" ? "#4CAF50" : theme.text,
+                      color: theme.text,
                     },
                   ]}
                 >
-                  {transaction.type === "receive" ? "+" : "-"}
-                  {transaction.amount} {transaction.crypto}
+                  -
+                  {transaction.amountCrypto} {transaction.symbol}
                 </Text>
                 <Text
                   style={[
@@ -387,11 +293,11 @@ export default function WalletScreen() {
                     { color: theme.textSecondary },
                   ]}
                 >
-                  ₹{transaction.priceInr.toLocaleString("en-IN")}
+                  ₹{transaction.amountInr.toLocaleString("en-IN")}
                 </Text>
               </View>
             </TouchableOpacity>
-          ))}
+          )})}
         </View>
 
         <View style={{ height: 20 }} />

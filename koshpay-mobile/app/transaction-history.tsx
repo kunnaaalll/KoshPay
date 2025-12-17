@@ -14,144 +14,58 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { useRouter } from "expo-router";
 import { scale, verticalScale, moderateScale, scaleFont, isSmallDevice } from '../utils/responsive';
+import { useWallet } from "../context/WalletContext";
 
-type TransactionType = "send" | "receive" | "deposit" | "withdrawal";
-type TransactionStatus = "completed" | "pending" | "failed";
-
-type Transaction = {
-  id: string;
-  type: TransactionType;
-  crypto: string;
-  amount: number;
-  inrValue: number;
-  date: string;
-  time: string;
-  recipient?: string;
-  sender?: string;
-  txHash: string;
-  status: TransactionStatus;
-  icon: any;
-};
-
-type FilterOption = "all" | "send" | "receive" | "deposit" | "withdrawal";
+type FilterOption = "all" | "PAYMENT" | "DEPOSIT";
 
 export default function TransactionHistoryScreen() {
   const { isDarkMode, theme } = useTheme();
+  const { transactions, assets } = useWallet();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<FilterOption>("all");
 
-  // Mock transaction data
-  const allTransactions: Transaction[] = [
-    {
-      id: "1",
-      type: "send",
-      crypto: "SOL",
-      amount: 0.5,
-      inrValue: 7710,
-      date: "Today",
-      time: "2:30 PM",
-      recipient: "Raj Kumar",
-      txHash: "5KJp4v1mPYcz...",
-      status: "completed",
-      icon: require("../assets/images/crypto/sol.png"),
-    },
-    {
-      id: "2",
-      type: "receive",
-      crypto: "BTC",
-      amount: 0.001,
-      inrValue: 9135,
-      date: "Yesterday",
-      time: "6:45 PM",
-      sender: "Priya Sharma",
-      txHash: "2xA9mN8kLpQ...",
-      status: "completed",
-      icon: require("../assets/images/crypto/btc.png"),
-    },
-    {
-      id: "3",
-      type: "deposit",
-      crypto: "ETH",
-      amount: 0.05,
-      inrValue: 15925,
-      date: "Yesterday",
-      time: "3:20 PM",
-      txHash: "8pL2vK9mXqR...",
-      status: "completed",
-      icon: require("../assets/images/crypto/eth.png"),
-    },
-    {
-      id: "4",
-      type: "send",
-      crypto: "SOL",
-      amount: 1.2,
-      inrValue: 18504,
-      date: "Nov 14",
-      time: "11:15 AM",
-      recipient: "Amit Patel",
-      txHash: "9vN3pL5kQwZ...",
-      status: "pending",
-      icon: require("../assets/images/crypto/sol.png"),
-    },
-    {
-      id: "5",
-      type: "withdrawal",
-      crypto: "BTC",
-      amount: 0.002,
-      inrValue: 18270,
-      date: "Nov 13",
-      time: "4:30 PM",
-      txHash: "1mK8nP2vLxY...",
-      status: "completed",
-      icon: require("../assets/images/crypto/btc.png"),
-    },
-  ];
-
   const filterOptions: { value: FilterOption; label: string }[] = [
     { value: "all", label: "All" },
-    { value: "send", label: "Sent" },
-    { value: "receive", label: "Received" },
-    { value: "deposit", label: "Deposits" },
-    { value: "withdrawal", label: "Withdrawals" },
+    { value: "PAYMENT", label: "Sent" },
+    { value: "DEPOSIT", label: "Deposits" },
   ];
 
   // Filter transactions
-  const filteredTransactions = allTransactions.filter((tx) => {
+  const filteredTransactions = transactions.filter((tx) => {
     const matchesFilter =
       selectedFilter === "all" || tx.type === selectedFilter;
     const matchesSearch =
       searchQuery === "" ||
-      tx.crypto.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tx.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tx.recipient?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tx.sender?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tx.txHash.toLowerCase().includes(searchQuery.toLowerCase());
+      tx.id.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const getTransactionIcon = (type: TransactionType) => {
+  const getTransactionIcon = (type: string) => {
     switch (type) {
-      case "send":
+      case "PAYMENT":
         return { name: "arrow-up", color: "#FF3B30" };
-      case "receive":
-        return { name: "arrow-down", color: "#4CAF50" };
-      case "deposit":
+      case "DEPOSIT":
         return { name: "add-circle", color: "#007AFF" };
-      case "withdrawal":
-        return { name: "remove-circle", color: "#FF9500" };
+      default:
+        return { name: "time", color: "#FF9500" };
     }
   };
 
-  const getStatusColor = (status: TransactionStatus) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
+      case "SUCCESS":
         return "#4CAF50";
-      case "pending":
+      case "PENDING":
         return "#FF9500";
-      case "failed":
+      case "FAILED":
         return "#F44336";
+      default: 
+        return "#808080";
     }
   };
 
@@ -255,6 +169,8 @@ export default function TransactionHistoryScreen() {
         ) : (
           filteredTransactions.map((tx) => {
             const iconConfig = getTransactionIcon(tx.type);
+            const asset = assets.find(a => a.symbol === tx.symbol);
+
             return (
               <TouchableOpacity
                 key={tx.id}
@@ -271,7 +187,7 @@ export default function TransactionHistoryScreen() {
               >
                 <View style={styles.transactionLeft}>
                   <View style={styles.iconContainer}>
-                    <Image source={tx.icon} style={styles.cryptoIcon} />
+                    <Image source={asset?.icon || require('../assets/images/icon.png')} style={styles.cryptoIcon} />
                     <View
                       style={[
                         styles.typeIndicator,
@@ -291,9 +207,9 @@ export default function TransactionHistoryScreen() {
                       <Text
                         style={[styles.transactionType, { color: theme.text }]}
                       >
-                        {tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}
+                        {tx.type} 
                       </Text>
-                      {tx.status !== "completed" && (
+                      {tx.status !== "SUCCESS" && (
                         <View
                           style={[
                             styles.statusBadge,
@@ -320,8 +236,8 @@ export default function TransactionHistoryScreen() {
                         { color: theme.textSecondary },
                       ]}
                     >
-                      {tx.recipient || tx.sender || "External Wallet"} •{" "}
-                      {tx.date} at {tx.time}
+                      {tx.recipient || "External Wallet"} •{" "}
+                      {tx.timestamp.toLocaleDateString()}
                     </Text>
                   </View>
                 </View>
@@ -332,14 +248,14 @@ export default function TransactionHistoryScreen() {
                       styles.transactionAmount,
                       {
                         color:
-                          tx.type === "receive" || tx.type === "deposit"
+                          tx.type === "DEPOSIT"
                             ? "#4CAF50"
                             : theme.text,
                       },
                     ]}
                   >
-                    {tx.type === "receive" || tx.type === "deposit" ? "+" : "-"}
-                    {tx.amount} {tx.crypto}
+                    {tx.type === "DEPOSIT" ? "+" : "-"}
+                    {tx.amountCrypto} {tx.symbol}
                   </Text>
                   <Text
                     style={[
@@ -347,7 +263,7 @@ export default function TransactionHistoryScreen() {
                       { color: theme.textSecondary },
                     ]}
                   >
-                    ₹{tx.inrValue.toLocaleString("en-IN")}
+                    ₹{tx.amountInr.toLocaleString("en-IN")}
                   </Text>
                 </View>
               </TouchableOpacity>

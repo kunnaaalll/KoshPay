@@ -33,7 +33,7 @@ const ID_OPTIONS = [
 ];
 
 // Aadhaar format XXXX XXXX XXXX (12 digits)
-const formatAadhaar = (text) => {
+const formatAadhaar = (text: string) => {
   let cleaned = text.replace(/\D/g, "").slice(0, 12);
   let formatted = cleaned;
   if (cleaned.length > 4) {
@@ -46,7 +46,7 @@ const formatAadhaar = (text) => {
 };
 
 // PAN format: AAAAA9999A
-const formatPAN = (text) => {
+const formatPAN = (text: string) => {
   return text
     .replace(/[^a-zA-Z0-9]/g, "")
     .toUpperCase()
@@ -67,7 +67,7 @@ export default function KYCBasicInfoScreen() {
 
   // Picker logic
   const [selectedModalIndex, setSelectedModalIndex] = useState(0);
-  const flatListRef = useRef();
+  const flatListRef = useRef<FlatList>(null);
 
   const getInitialIndex = () => {
     if (!idType) return 0;
@@ -86,7 +86,7 @@ export default function KYCBasicInfoScreen() {
     }, 10);
   };
 
-  const handleSelectOption = (option, idx) => {
+  const handleSelectOption = (option: any, idx: number) => {
     setIdType(option.value);
     setModalVisible(false);
     setSelectedModalIndex(idx);
@@ -99,7 +99,7 @@ export default function KYCBasicInfoScreen() {
   const isPanValid = idType === "PAN" ? nidNumber.length === 10 : true;
 
   // Date format DD/MM/YYYY
-  const formatDate = (text) => {
+  const formatDate = (text: string) => {
     const cleaned = text.replace(/\D/g, "").slice(0, 8);
     let formatted = cleaned;
     if (cleaned.length >= 2) {
