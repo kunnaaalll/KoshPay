@@ -19,10 +19,11 @@ The mobile app and website need the Backend to function.
 
 1.  **Push Code**: Ensure `koshpay-backend` is pushed to GitHub.
 2.  **Create Service**: Go to [Render.com](https://render.com) -> New **Web Service**.
-    *   Connect your GitHub repo.
-    *   **Root Directory**: `koshpay-backend`.
+    *   **Connect Repository**: Select your `KoshPay` (monorepo) repository.
+    *   **⚠️ CRITICAL: Root Directory**: You MUST set this to `koshpay-backend`.
+        *   Render needs to know to look inside this folder, not the root.
     *   **Build Command**: `npm install`
-    *   **Start Command**: `npm start`
+    *   **Start Command**: `npm start` (This will run `node app.js`)
 3.  **Environment Variables**: Add these in Render Dashboard:
     *   `DATABASE_URL`: Your PostgreSQL connection string (You can create a **PostgreSQL** database on Render first).
     *   `JWT_SECRET`: A secure random string.
