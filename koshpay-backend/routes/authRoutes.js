@@ -1,7 +1,7 @@
 const express = require("express");
 const axios = require("axios");
 require("dotenv").config();
-const { createUserByNumber, findUserByNumber } = require("../models/User");
+const { createUserByNumber, findUserByNumber, updateUser } = require("../models/User");
 const { createWalletForUser } = require("../models/Wallets");
 const jwtSecret = process.env.JWT_SECRET;
 const jwt = require("jsonwebtoken");
@@ -9,6 +9,7 @@ const router = express.Router();
 
 router
   .post("/send-otp", async (req, res) => {
+    // ... (unchanged)
     const { phoneNumber } = req.body;
     if (!phoneNumber) {
       return res.status(400).json({ error: "Phone number is required" });
@@ -98,20 +99,14 @@ router
           console.log(`Created new Demo User and Wallet: ${user.id}`);
         }
         
-        // Force Approve KYC for Demo
-        // We need pool access, but since we don't have it imported easily, 
-        // we can rely on Frontend bypass for UI, OR we assume createUserByNumber defaults correctly.
-        // Actually, let's just proceed. The Frontend skips KYC navigation anyway.
-        // But for API consistence, we should update it.
-        // Let's import pool locally just for this if needed, or skip.
-        // User model defaults to PENDING.
-        // Let's just return the user. The Frontend logic skips KYC UI.
+        // FORCE UPDATE Name and KYC
+        user = await updateUser(user.id, { 
+            fullname: 'Demo User', 
+            kyc_status: 'APPROVED' 
+        });
         
         const payload = { userID: user.id, phoneNumber: user.phonenumber };
         const token = jwt.sign(payload, jwtSecret, { expiresIn: "365d" });
-        
-        // Mock the user object to say approved so frontend is happy
-        user.kyc_status = 'APPROVED'; 
         
         return res.json({ token, user, message: "Demo Login Successful" });
     } catch (error) {

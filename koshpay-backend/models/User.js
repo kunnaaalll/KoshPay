@@ -34,4 +34,27 @@ async function createUserByNumber(phoneNumber) {
   return res.rows[0];
 }
 
-module.exports = { createUsersTable, createUserByNumber, findUserByNumber };
+async function updateUser(id, { fullname, kyc_status }) {
+  const fields = [];
+  const values = [];
+  let query = "UPDATE users SET ";
+
+  if (fullname) {
+    fields.push(`fullname = $${fields.length + 1}`);
+    values.push(fullname);
+  }
+  if (kyc_status) {
+    fields.push(`kyc_status = $${fields.length + 1}`);
+    values.push(kyc_status);
+  }
+
+  if (fields.length === 0) return null;
+
+  query += fields.join(", ") + ` WHERE id = $${fields.length + 1} RETURNING *`;
+  values.push(id);
+
+  const res = await pool.query(query, values);
+  return res.rows[0];
+}
+
+module.exports = { createUsersTable, createUserByNumber, findUserByNumber, updateUser };
