@@ -176,46 +176,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const fetchWallet = async () => {
     if (!user?.id) return;
     
-    // --- DEMO USER BYPASS ---
-    if (user.phone === '9999999999') {
-        console.log("Fetching Mock Wallet for Demo User");
-        // Set fixed mock balance
-        const solBalance = 15.5; 
-        
-        const updatedAssets = INITIAL_ASSETS.map(asset => {
-            if (asset.symbol === 'SOL') {
-              return { ...asset, balance: solBalance };
-            }
-            return { ...asset, balance: 0 };
-        });
-        setAssets(updatedAssets);
-        
-        // Mock Transactions
-        setTransactions([
-            {
-                id: 'demo_tx_1',
-                type: 'DEPOSIT',
-                amountCrypto: 10,
-                symbol: 'SOL',
-                amountInr: 154200,
-                recipient: 'Deposit',
-                timestamp: new Date(),
-                status: 'SUCCESS'
-            },
-            {
-                id: 'demo_tx_2',
-                type: 'PAYMENT',
-                amountCrypto: 2.5,
-                symbol: 'SOL',
-                amountInr: 38550,
-                recipient: 'Grocery Store',
-                timestamp: new Date(Date.now() - 86400000),
-                status: 'SUCCESS'
-            }
-        ]);
-        return; // Skip API call
-    }
-
+    // Bypass removed: Proper API Execution requested
     try {
       // 1. Fetch Wallet Data
       const res = await axios.get(`${API_URL}/wallet/${user.id}`);
