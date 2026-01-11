@@ -30,17 +30,18 @@ export default function Index() {
 
     // 1. Request Permissions (Only on first run mostly, but we ask here)
     if (!isReady) {
-        // Camera
-        const camStatus = await Camera.requestCameraPermissionsAsync();
-        
-        // Microphone (often needed with camera)
-        const micStatus = await Camera.requestMicrophonePermissionsAsync();
-
-        // Biometrics (just check support)
-        const bioStatus = await LocalAuthentication.hasHardwareAsync();
-        
-        // Notifications (Skipped as package missing)
-        // const { status: notifStatus } = await Notifications.requestPermissionsAsync();
+        try {
+          // Camera
+          await Camera.requestCameraPermissionsAsync();
+          
+          // Microphone (often needed with camera)
+          await Camera.requestMicrophonePermissionsAsync();
+  
+          // Biometrics (just check support)
+          await LocalAuthentication.hasHardwareAsync();
+        } catch (e) {
+          console.warn("Permission init error", e);
+        }
 
         setIsReady(true);
     }
