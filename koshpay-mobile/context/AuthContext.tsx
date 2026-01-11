@@ -53,6 +53,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (phone: string, otp: string) => {
     try {
+      // --- DEMO LOGIN BYPASS ---
+      if (phone.replace(/\s/g, '') === '9999999999' && otp === '123456') {
+          console.log("Demo Login Detected");
+          const demoUser: User = {
+              id: '553e789c-4b10-488b-b875-2c8f003f0533', // Fixed UUID for demo
+              phone: '9999999999',
+              name: 'Demo User',
+              koshpayId: 'demo@koshpay',
+              kycStatus: 'approved' // Skip KYC
+          };
+          setUser(demoUser);
+          await SecureStore.setItemAsync('user', JSON.stringify(demoUser));
+          await SecureStore.setItemAsync('authToken', 'demo-token');
+          return;
+      }
+
       const response = await axios.post(`${API_URL}/auth/verify-otp`, {
         phoneNumber: phone,
         code: otp
