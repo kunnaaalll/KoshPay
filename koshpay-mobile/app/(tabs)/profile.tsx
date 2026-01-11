@@ -13,16 +13,23 @@ import { useTheme } from "../../context/ThemeContext";
 import { useRouter } from "expo-router";
 import { scale, verticalScale, moderateScale, scaleFont, isSmallDevice } from '../../utils/responsive';
 
+// ... imports
+import { useAuth } from "../../context/AuthContext";
+import { useWallet } from "../../context/WalletContext";
+
 export default function ProfileScreen() {
   const { isDarkMode, theme } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user, logout } = useAuth();
+  // We don't have totalSpend in context yet, we can calculate from transactions or mock it 
+  // But let's use dynamic user info at least.
 
   // User data
-  const userName = "Kunal Parmar";
-  const koshpayId = "kparmar2911@koshpay.in";
-  const koshpayNumber = "7506854879";
-  const totalSpend = 248750.5;
+  const userName = user?.name || "KoshPay User";
+  const koshpayId = user?.koshpayId || user?.phone || "user@koshpay";
+  const koshpayNumber = user?.phone || "";
+  const totalSpend = 248750.5; // Keeping this hardcoded or calc later
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -300,13 +307,33 @@ export default function ProfileScreen() {
                 >
                   English
                 </Text>
-              </View>
+            </View>
             </View>
             <Ionicons
               name="chevron-forward"
               size={24}
               color={theme.textSecondary}
             />
+          </TouchableOpacity>
+
+          {/* Logout Button */}
+          <TouchableOpacity
+            style={[styles.menuItem, { backgroundColor: theme.card, marginTop: 12 }]}
+            onPress={logout}
+          >
+            <View style={styles.menuLeft}>
+              <View
+                style={[
+                  styles.menuIcon,
+                  { backgroundColor: "#FFEBEE" },
+                ]}
+              >
+                <Ionicons name="log-out-outline" size={24} color="#D32F2F" />
+              </View>
+              <Text style={[styles.menuTitle, { color: "#D32F2F" }]}>
+                Log Out
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
 
