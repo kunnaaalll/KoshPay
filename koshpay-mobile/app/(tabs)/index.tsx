@@ -203,15 +203,7 @@ export default function HomeScreen() {
               </TouchableOpacity>
             ))}
 
-            {/* DEBUG: Test Navigation Button */}
-            {__DEV__ && (
-              <TouchableOpacity
-                style={[styles.testButton, { backgroundColor: "#FF9500" }]}
-                onPress={() => router.push("/test-navigation")}
-              >
-                <Text style={styles.testButtonText}>🧪 Test Payment Flow</Text>
-              </TouchableOpacity>
-            )}
+
           </ScrollView>
         </View>
 
@@ -442,15 +434,7 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Test Button */}
-        <View style={{ paddingHorizontal: 16, paddingVertical: 12 }}>
-          <TouchableOpacity
-            style={styles.testButton}
-            onPress={() => router.push("/test-navigation")}
-          >
-            <Text style={styles.testButtonText}>🧪 Test Screens</Text>
-          </TouchableOpacity>
-        </View>
+
 
         <View style={{ height: 20 }} />
       </ScrollView>

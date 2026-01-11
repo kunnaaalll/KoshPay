@@ -56,10 +56,10 @@ export default function PaymentScreen() {
   const params = useLocalSearchParams();
 
   const recipient = {
-    name: (params.name as string) || "SANGEETA ARVIND PARMAR",
-    bankingName: (params.bankingName as string) || "SANGEETA ARVIND PAR...",
-    phone: (params.phone as string) || "",
-    koshpayId: (params.koshpayId as string) || "kparmar2911",
+    name: (params.name as string) || "Priya Sharma",
+    bankingName: (params.bankingName as string) || "PRIYA SHARMA",
+    phone: (params.phone as string) || "+91 98765 43210",
+    koshpayId: (params.koshpayId as string) || "priya.sharma",
   };
 
   const [amount, setAmount] = useState("");
@@ -692,10 +692,11 @@ export default function PaymentScreen() {
             activeOpacity={1}
             onPress={() => setShowCryptoModal(false)}
           />
-          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card, paddingBottom: insets.bottom + 20 }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>
               Choose Crypto Currency
             </Text>
+            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
             {assets.map((crypto) => (
               <TouchableOpacity
                 key={crypto.id}
@@ -721,6 +722,7 @@ export default function PaymentScreen() {
                 )}
               </TouchableOpacity>
             ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -738,10 +740,11 @@ export default function PaymentScreen() {
             activeOpacity={1}
             onPress={() => setShowWalletModal(false)}
           />
-          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card, paddingBottom: insets.bottom + 20 }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>
               Choose wallet to pay with
             </Text>
+            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator={false}>
             {walletOptions.map((wallet) => (
               <TouchableOpacity
                 key={wallet.id}
@@ -757,7 +760,7 @@ export default function PaymentScreen() {
                         borderStyle: wallet.type === "koshpay" ? "solid" : "dashed",
                         borderWidth: wallet.type === "koshpay" ? 0 : 2,
                         borderColor: theme.border,
-                      },
+                       },
                     ]}
                   >
                     <Ionicons name={wallet.icon as any} size={28} color={theme.primary} />
@@ -782,6 +785,7 @@ export default function PaymentScreen() {
                 )}
               </TouchableOpacity>
             ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -989,10 +993,11 @@ const styles = StyleSheet.create({
   },
   modalOverlayTouch: { flex: 1 },
   modalContent: {
+    width: '100%',
     borderTopLeftRadius: moderateScale(24),
     borderTopRightRadius: moderateScale(24),
     padding: scale(20),
-    maxHeight: "70%",
+    maxHeight: "80%",
   },
   modalTitle: { 
     fontSize: scaleFont(20), 

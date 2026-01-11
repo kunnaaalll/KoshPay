@@ -21,6 +21,7 @@ import {
 } from "../../utils/responsive";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import { API_URL } from "../../constants/config";
 
 
 export default function KYCSelfieScreen() {
@@ -98,7 +99,7 @@ export default function KYCSelfieScreen() {
       } as any);
 
       const uploadRes = await fetch(
-        "http://192.168.1.49:3001/api/upload/kyc-selfie-image",
+        `${API_URL}/upload/kyc-selfie-image`,
         {
           method: "POST",
           headers: {
@@ -127,7 +128,7 @@ export default function KYCSelfieScreen() {
 
       const imageUrl = uploadData.imageUrl;
 
-      const res = await fetch("http://192.168.1.49:3001/api/kyc/selfie", {
+      const res = await fetch(`${API_URL}/kyc/selfie`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

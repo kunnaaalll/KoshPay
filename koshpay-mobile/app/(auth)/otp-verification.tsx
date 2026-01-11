@@ -23,6 +23,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import { useAuth } from "../../context/AuthContext";
 
 const AnimatedOTPInput = ({ digit, isActive, isFilled }: any) => {
   const { theme } = useTheme();
@@ -86,6 +87,7 @@ export default function OTPVerificationScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { phone } = useLocalSearchParams();
+  const { login } = useAuth();
 
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -135,30 +137,12 @@ export default function OTPVerificationScreen() {
     }
     setIsLoading(true);
     try {
-      const response = await fetch("http://192.168.1.49:3001/auth/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNumber: phone, code }),
-      });
-
-      const data = await response.json();
+      await login(String(phone), code);
       setIsLoading(false);
-
-      if (response.ok) {
-        if (!data.token || !data.user) {
-          Alert.alert("Error", "Invalid response from server");
-          return;
-        }
-        await SecureStore.setItemAsync("authToken", String(data.token));
-        await SecureStore.setItemAsync("userId", String(data.user.id));
-
-        router.replace("/kyc-basic-info");
-      } else {
-        Alert.alert("Error", data.error || "Invalid OTP");
-      }
+      router.replace("/kyc-basic-info");
     } catch (error) {
       setIsLoading(false);
-      Alert.alert("Network Error", String(error));
+      Alert.alert("Error", String(error));
     }
   };
 

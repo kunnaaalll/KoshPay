@@ -4,6 +4,7 @@ require("dotenv").config();
 const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const kycRoutes = require('./routes/kycRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 const cors = require('cors');
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -18,6 +19,10 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 app.use('/api', kycRoutes);
 app.use('/api', uploadRoutes);
+app.use('/api', transactionRoutes);
+app.use('/api/wallet', require('./routes/walletRoutes'));
+app.use('/api/payout', require('./routes/payoutRoutes'));
+app.use('/api/crypto', require('./routes/cryptoRoutes'));
 
 
 //initialize database and start server

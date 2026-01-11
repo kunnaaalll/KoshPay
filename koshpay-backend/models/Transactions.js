@@ -28,4 +28,42 @@ async function createTransactionTable() {
   }
 }
 
-module.exports = { createTransactionTable };
+async function createTransaction(data) {
+    const {
+        user_id,
+        wallet_id,
+        amount_fiat,
+        fiat_currency,
+        paid_currency,
+        crypto_amount,
+        crypto_price,
+        payee_info
+    } = data;
+
+    const query = `
+        INSERT INTO transactions (
+            user_id, wallet_id, amount_fiat, fiat_currency, paid_currency, 
+            crypto_amount, crypto_price, payee_info
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *;
+    `;
+    const values = [user_id, wallet_id, amount_fiat, fiat_currency, paid_currency, crypto_amount, crypto_price, payee_info];
+    
+    try {
+        const result = await pool.query(query, values);
+        return result.rows[0];
+    } catch (err) {
+        throw err;
+    }
+}
+
+async function getTransactionById(id) {
+    try {
+        const result = await pool.query('SELECT * FROM transactions WHERE id = $1', [id]);
+        return result.rows[0];
+    } catch (err) {
+        throw err;
+    }
+}
+
+module.exports = { createTransactionTable, createTransaction, getTransactionById };

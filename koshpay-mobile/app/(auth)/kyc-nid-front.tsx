@@ -22,6 +22,7 @@ import {
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { useLocalSearchParams } from "expo-router";
+import { API_URL } from "../../constants/config";
 
 export default function KYCNIDFrontScreen() {
   const { isDarkMode, theme } = useTheme();
@@ -99,7 +100,7 @@ export default function KYCNIDFrontScreen() {
       } as any);
 
       const uploadRes = await fetch(
-        "http://192.168.1.49:3001/api/upload/kyc-front-image",
+        `${API_URL}/upload/kyc-front-image`,
         {
           method: "POST",
           headers: {
@@ -121,7 +122,7 @@ export default function KYCNIDFrontScreen() {
       
       const imageUrl = uploadData.imageUrl;
 
-      const res = await fetch("http://192.168.1.49:3001/api/kyc/nid-front", {
+      const res = await fetch(`${API_URL}/kyc/nid-front`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

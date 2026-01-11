@@ -97,7 +97,7 @@ export default function WalletScreen() {
         <View style={styles.quickActionsContainer}>
           <TouchableOpacity
             style={styles.quickAction}
-            onPress={() => router.push("/add-crypto")}
+            onPress={() => router.push("/deposit")}
           >
             <View
               style={[styles.quickActionButton, { backgroundColor: "#1565C0" }]}
@@ -106,6 +106,18 @@ export default function WalletScreen() {
             </View>
             <Text style={[styles.quickActionLabel, { color: theme.text }]}>
               Add Crypto
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.quickAction}
+          onPress={() => router.push("/withdraw-upi")}>
+            <View
+              style={[styles.quickActionButton, { backgroundColor: "#FF9800" }]} 
+            >
+              <Ionicons name="arrow-down" size={28} color="#FFFFFF" />
+            </View>
+            <Text style={[styles.quickActionLabel, { color: theme.text }]}>
+              Withdraw
             </Text>
           </TouchableOpacity>
 

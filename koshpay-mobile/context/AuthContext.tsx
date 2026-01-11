@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import { API_URL } from '../constants/config';
+import axios from 'axios';
 
 type User = {
   id: string;
@@ -33,7 +35,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const userData = await SecureStore.getItemAsync('user');
       if (userData) {
-        setUser(JSON.parse(userData));
+        let parsedUser = JSON.parse(userData);
+        // Migration: Fix legacy ID "1" to valid UUID for Backend
+        if (parsedUser.id === '1') {
+             console.log("Migrating legacy user ID '1' to valid UUID");
+             parsedUser.id = '553e789c-4b10-488b-b875-2c8f003f0533';
+             await SecureStore.setItemAsync('user', JSON.stringify(parsedUser));
+        }
+        setUser(parsedUser);
       }
     } catch (error) {
       console.error('Failed to load user:', error);
@@ -43,18 +52,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const login = async (phone: string, otp: string) => {
-    // TODO: Replace with actual API call
-    // For now, mock the login
-    const mockUser: User = {
-      id: '1',
-      phone,
-      name: 'Kunal Sharma',
-      koshpayId: `${phone.slice(-4)}@koshpay`,
-      kycStatus: 'pending', // Will be 'pending' for new users
-    };
+    try {
+      const response = await axios.post(`${API_URL}/auth/verify-otp`, {
+        phoneNumber: phone,
+        code: otp
+      });
 
-    setUser(mockUser);
-    await SecureStore.setItemAsync('user', JSON.stringify(mockUser));
+      const { token, user: userData } = response.data;
+      
+      if (token && userData) {
+          setUser(userData);
+          await SecureStore.setItemAsync('user', JSON.stringify(userData));
+          await SecureStore.setItemAsync('authToken', token);
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      throw new Error(error.response?.data?.error || "Login failed");
+    }
   };
 
   const logout = async () => {

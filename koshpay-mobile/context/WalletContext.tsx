@@ -1,4 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_URL } from '../constants/config';
+import axios from 'axios';
+import { useAuth } from './AuthContext';
 
 // Types
 export interface Asset {
@@ -30,6 +33,9 @@ interface WalletContextType {
   getAsset: (symbol: string) => Asset | undefined;
   processPayment: (symbol: string, amountCrypto: number, recipient: string) => Promise<boolean>;
   refreshPrices: () => Promise<void>;
+  memoId: string | null;
+  depositSimulate: (amount: number) => Promise<void>;
+  refreshWallet: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -116,8 +122,97 @@ const INITIAL_TRANSACTIONS: Transaction[] = [
 ];
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
-  const [transactions, setTransactions] = useState<Transaction[]>(INITIAL_TRANSACTIONS);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [memoId, setMemoId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchWallet();
+      fetchRealTimePrices(); // Fetch immediately
+    }
+
+    // Poll every 60 seconds
+    const interval = setInterval(() => {
+        fetchRealTimePrices();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const fetchRealTimePrices = async () => {
+    try {
+      const response = await axios.get(
+        'https://api.coingecko.com/api/v3/simple/price?ids=solana,bitcoin,ethereum,usd-coin&vs_currencies=inr&include_24hr_change=true'
+      );
+      const prices = response.data;
+      
+      setAssets(prev => prev.map(asset => {
+        let newPrice = asset.priceInr;
+        let change24h = asset.change24h;
+
+        if (asset.symbol === 'SOL' && prices.solana) {
+           newPrice = prices.solana.inr;
+           change24h = prices.solana.inr_24h_change;
+        } else if (asset.symbol === 'BTC' && prices.bitcoin) {
+           newPrice = prices.bitcoin.inr;
+           change24h = prices.bitcoin.inr_24h_change;
+        } else if (asset.symbol === 'ETH' && prices.ethereum) {
+           newPrice = prices.ethereum.inr;
+           change24h = prices.ethereum.inr_24h_change;
+        } else if (asset.symbol === 'USDC' && prices['usd-coin']) {
+           newPrice = prices['usd-coin'].inr;
+           change24h = prices['usd-coin'].inr_24h_change;
+        }
+
+        return { ...asset, priceInr: newPrice, change24h };
+      }));
+    } catch (error: any) {
+      console.warn("Price fetch failed (using fallback/cache):", error.message);
+    }
+  };
+
+  const fetchWallet = async () => {
+    if (!user?.id) return;
+    try {
+      // 1. Fetch Wallet Data
+      const res = await axios.get(`${API_URL}/wallet/${user.id}`);
+      const walletData = res.data;
+
+      setMemoId(walletData.memo_id);
+
+      // 2. Map Backend Data to Frontend Assets
+      // For MVP, Backend calls it 'balance' (SOL). Frontend expects Asset[].
+      // We will map the single backend balance to the SOL asset.
+      const solBalance = Number(walletData.balance);
+      
+      const updatedAssets = INITIAL_ASSETS.map(asset => {
+        if (asset.symbol === 'SOL') {
+          return { ...asset, balance: solBalance };
+        }
+        return { ...asset, balance: 0 }; // Other assets 0 for now
+      });
+      setAssets(updatedAssets);
+
+      // 3. Map Transactions
+      const mappedTransactions: Transaction[] = walletData.transactions.map((tx: any) => ({
+        id: tx.reference_id,
+        type: tx.type === 'PAYMENT' ? 'PAYMENT' : 'DEPOSIT',
+        amountCrypto: Number(tx.amount),
+        symbol: 'SOL', // All backend txs are SOL for now
+        amountInr: Number(tx.amount) * 15420, // Mock rate
+        recipient: tx.metadata?.recipient || (tx.type === 'DEPOSIT' ? 'Deposit' : 'External'),
+        timestamp: new Date(tx.created_at),
+        status: 'SUCCESS'
+      }));
+      setTransactions(mappedTransactions);
+
+    } catch (error) {
+        // If 404, maybe create? Or just log
+        console.error("Error fetching wallet:", error);
+    }
+  };
 
   // Derived State
   const totalBalanceInr = assets.reduce(
@@ -130,42 +225,37 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const refreshPrices = async () => {
     // Simulating API call
     console.log('Refreshing prices...');
-    // In a real app, fetch from Coingecko/Binance here
+    await fetchWallet(); // Also refresh balance
   };
 
   const processPayment = async (symbol: string, amountCrypto: number, recipient: string) => {
-    return new Promise<boolean>((resolve, reject) => {
-      setTimeout(() => {
-        setAssets((prevAssets) =>
-          prevAssets.map((asset) => {
-            if (asset.symbol === symbol) {
-              if (asset.balance < amountCrypto) {
-                reject(new Error('Insufficient balance'));
-                return asset;
-              }
-              return { ...asset, balance: asset.balance - amountCrypto };
-            }
-            return asset;
-          })
-        );
-
-        const asset = getAsset(symbol);
-        const newTx: Transaction = {
-            id: Math.random().toString(36).substr(2, 9),
-            type: 'PAYMENT',
-            amountCrypto,
-            symbol,
-            amountInr: amountCrypto * (asset?.priceInr || 0),
-            recipient,
-            timestamp: new Date(),
-            status: 'SUCCESS'
-        };
-        setTransactions(prev => [newTx, ...prev]);
-
-        resolve(true);
-      }, 1500); // Simulate network delay
-    });
+    if (!user?.id) return false;
+    try {
+        await axios.post(`${API_URL}/wallet/pay`, {
+            userId: user.id,
+            amount: amountCrypto,
+            recipientName: recipient
+        });
+        await fetchWallet(); // Refresh after pay
+        return true;
+    } catch (e) {
+        console.error("Payment failed", e);
+        throw e;
+    }
   };
+
+  const depositSimulate = async (amount: number) => {
+    if (!user?.id) return;
+    try {
+        await axios.post(`${API_URL}/wallet/deposit`, {
+            userId: user.id,
+            amount
+        });
+        await fetchWallet();
+    } catch (e) {
+        console.error("Deposit failed", e);
+    }
+  }
 
   return (
     <WalletContext.Provider
@@ -176,6 +266,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         getAsset,
         processPayment,
         refreshPrices,
+        memoId,        // Exposed for Deposit Screen
+        depositSimulate, // Exposed for Deposit Screen
+        refreshWallet: fetchWallet
       }}
     >
       {children}

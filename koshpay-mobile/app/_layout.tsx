@@ -5,7 +5,7 @@ global.Buffer = global.Buffer || Buffer;
 import React, { useState, useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import * as ExpoSplashScreen from 'expo-splash-screen';
-import { SplashScreen } from "../components/SplashScreen";
+
 import { Stack } from "expo-router";
 import { ThemeProvider } from "../context/ThemeContext";
 import { NotificationProvider } from "../context/NotificationContext";
@@ -17,7 +17,7 @@ ExpoSplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
-  const [isSplashAnimationFinished, setIsSplashAnimationFinished] = useState(false);
+
 
   useEffect(() => {
     async function prepare() {
@@ -59,12 +59,7 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 {/* ... existing screens ... */}
-                <Stack.Screen
-                  name="test-navigation"
-                  options={{
-                    animation: "slide_from_right",
-                  }}
-                />
+
                 
                 {/* ... copy all existing screens ... */}
                 <Stack.Screen name="qr-scanner" options={{ animationTypeForReplace: "pop" }} />
@@ -85,9 +80,7 @@ export default function RootLayout() {
                 <Stack.Screen name="user-qr" options={{ animation: "slide_from_right" }} />
               </Stack>
               
-               {!isSplashAnimationFinished && (
-                  <SplashScreen onFinish={() => setIsSplashAnimationFinished(true)} />
-              )}
+
             </WalletProvider>
           </AuthProvider>
         </NotificationProvider>

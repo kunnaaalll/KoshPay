@@ -24,6 +24,7 @@ import {
 } from "../../utils/responsive";
 import { useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+import { API_URL } from "../../constants/config";
 
 const ID_OPTIONS = [
   { label: "Aadhaar", value: "Aadhaar" },
@@ -143,7 +144,7 @@ export default function KYCBasicInfoScreen() {
       const [day, month, year] = dateOfBirth.split("/");
       const isoDate = `${year}-${month}-${day}`;
 
-      const res = await fetch("http://192.168.1.49:3001/api/kyc/basic-info", {
+      const res = await fetch(`${API_URL}/kyc/basic-info`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

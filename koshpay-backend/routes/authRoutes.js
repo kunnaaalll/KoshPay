@@ -2,6 +2,7 @@ const express = require("express");
 const axios = require("axios");
 require("dotenv").config();
 const { createUserByNumber, findUserByNumber } = require("../models/User");
+const { createWalletForUser } = require("../models/Wallets");
 const jwtSecret = process.env.JWT_SECRET;
 const jwt = require("jsonwebtoken");
 const router = express.Router();
@@ -42,24 +43,38 @@ router
         .json({ error: "Phone number and OTP code are required" });
     }
     try {
-      const response = await axios.post(
-        `https://verify.twilio.com/v2/Services/${process.env.TWILIO_SERVICE_SID}/VerificationCheck`,
-        new URLSearchParams({
-          To: phoneNumber,
-          Code: code,
-        }),
-        {
-          auth: {
-            username: process.env.TWILIO_ACCOUNT_SID,
-            password: process.env.TWILIO_AUTH_TOKEN,
-          },
-        }
-      );
+      let isApproved = false;
 
-      if (response.data.status === "approved") {
+      // BYPASS FOR TEST USER
+      if (phoneNumber === '+19999999999' && code === '123456') {
+          console.log("Using Test User Bypass");
+          isApproved = true;
+      } else {
+          const response = await axios.post(
+            `https://verify.twilio.com/v2/Services/${process.env.TWILIO_SERVICE_SID}/VerificationCheck`,
+            new URLSearchParams({
+              To: phoneNumber,
+              Code: code,
+            }),
+            {
+              auth: {
+                username: process.env.TWILIO_ACCOUNT_SID,
+                password: process.env.TWILIO_AUTH_TOKEN,
+              },
+            }
+          );
+          if (response.data.status === "approved") {
+              isApproved = true;
+          }
+      }
+
+      if (isApproved) {
         let user = await findUserByNumber(phoneNumber);
         if (!user) {
           user = await createUserByNumber(phoneNumber);
+          // Auto-create wallet for new user
+          await createWalletForUser(user.id);
+          console.log(`Created new wallet for user ${user.id}`);
         }
         const payload = { userID: user.id, phoneNumber: user.phonenumber };
         const token = jwt.sign(payload, jwtSecret, { expiresIn: "365d" });

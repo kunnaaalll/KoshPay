@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,6 +23,7 @@ import {
   scaleFont,
   isSmallDevice,
 } from "../../utils/responsive";
+import { API_URL } from "../../constants/config";
 
 export default function PhoneLoginScreen() {
   const { isDarkMode, theme } = useTheme();
@@ -31,43 +34,42 @@ export default function PhoneLoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSendOTP = async () => {
-  if (phoneNumber.length !== 10) {
-    alert("Please enter a valid 10-digit phone number");
-    return;
-  }
-  setIsLoading(true);
+    if (phoneNumber.length !== 10) {
+      alert("Please enter a valid 10-digit phone number");
+      return;
+    }
+    setIsLoading(true);
 
-  try {
-    const response = await fetch("http://192.168.1.49:3001/auth/send-otp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phoneNumber: `+91${phoneNumber}` }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      // process data if needed
-
-      setIsLoading(false);
-      router.push({
-        pathname: "/(auth)/otp-verification",
-        params: { phone: `+91${phoneNumber}` },
+    try {
+      const response = await fetch(`${API_URL}/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNumber: `+91${phoneNumber}` }),
       });
-    } else {
-      const errortext = await response.text(); // read as plain text
-      setIsLoading(false);
-      alert("Error: " + errortext);
-    }
-  } catch (error) {
-    setIsLoading(false);
-    if (error instanceof Error) {
-      alert("Network error: " + error.message);
-    } else {
-      alert("Network error: " + String(error));
-    }
-  }
-};
 
+      if (response.ok) {
+        const data = await response.json();
+        // process data if needed
+
+        setIsLoading(false);
+        router.push({
+          pathname: "/(auth)/otp-verification",
+          params: { phone: `+91${phoneNumber}` },
+        });
+      } else {
+        const errortext = await response.text(); // read as plain text
+        setIsLoading(false);
+        alert("Error: " + errortext);
+      }
+    } catch (error) {
+      setIsLoading(false);
+      if (error instanceof Error) {
+        alert("Network error: " + error.message);
+      } else {
+        alert("Network error: " + String(error));
+      }
+    }
+  };
 
   const formatPhoneNumber = (text: string) => {
     // Remove non-digits
@@ -80,115 +82,122 @@ export default function PhoneLoginScreen() {
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <StatusBar
-        barStyle={isDarkMode ? "light-content" : "dark-content"}
-        backgroundColor={theme.background}
-      />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={{ flex: 1 }}>
+          <StatusBar
+            barStyle={isDarkMode ? "light-content" : "dark-content"}
+            backgroundColor={theme.background}
+          />
 
-      <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View
-            style={[
-              styles.logoContainer,
-              { backgroundColor: theme.primary + "20" },
-            ]}
-          >
-            <Ionicons name="wallet" size={48} color={theme.primary} />
-          </View>
-          <Text style={[styles.appName, { color: theme.text }]}>KoshPay</Text>
-          <Text style={[styles.tagline, { color: theme.textSecondary }]}>
-            Secure Crypto Payments
-          </Text>
-        </View>
-
-        {/* Form */}
-        <View style={styles.formContainer}>
-          <Text style={[styles.title, { color: theme.text }]}>
-            Enter your phone number
-          </Text>
-          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
-            We'll send you a verification code
-          </Text>
-
-          {/* Phone Input */}
-          <View
-            style={[
-              styles.phoneInputContainer,
-              { backgroundColor: theme.card },
-            ]}
-          >
-            <View style={styles.countryCode}>
-              <Text style={[styles.countryCodeText, { color: theme.text }]}>
-                🇮🇳
-              </Text>
-              <Text style={[styles.countryCodeText, { color: theme.text }]}>
-                +91
-              </Text>
-            </View>
-            <TextInput
-              style={[styles.phoneInput, { color: theme.text }]}
-              placeholder="9876543210"
-              placeholderTextColor={theme.textSecondary}
-              keyboardType="number-pad"
-              value={phoneNumber}
-              onChangeText={(text) => setPhoneNumber(formatPhoneNumber(text))}
-              maxLength={10}
-              autoFocus
-            />
-          </View>
-
-          {/* Continue Button */}
-          <TouchableOpacity
-            style={[
-              styles.continueButton,
-              {
-                backgroundColor:
-                  phoneNumber.length === 10 ? theme.primary : theme.card,
-              },
-            ]}
-            onPress={handleSendOTP}
-            disabled={phoneNumber.length !== 10 || isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <Text
+          <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
+            {/* Header */}
+            <View style={styles.header}>
+              <View
                 style={[
-                  styles.continueButtonText,
-                  {
-                    color:
-                      phoneNumber.length === 10 ? "#FFF" : theme.textSecondary,
-                  },
+                  styles.logoContainer,
+                  { backgroundColor: theme.primary + "20" },
                 ]}
               >
-                Send OTP
+                <Ionicons name="wallet" size={48} color={theme.primary} />
+              </View>
+              <Text style={[styles.appName, { color: theme.text }]}>KoshPay</Text>
+              <Text style={[styles.tagline, { color: theme.textSecondary }]}>
+                Secure Crypto Payments
               </Text>
-            )}
-          </TouchableOpacity>
+            </View>
 
-          {/* Terms */}
-          <Text style={[styles.termsText, { color: theme.textSecondary }]}>
-            By continuing, you agree to our{" "}
-            <Text style={{ color: theme.primary }}>Terms of Service</Text> and{" "}
-            <Text style={{ color: theme.primary }}>Privacy Policy</Text>
-          </Text>
-        </View>
+            {/* Form */}
+            <View style={styles.formContainer}>
+              <Text style={[styles.title, { color: theme.text }]}>
+                Enter your phone number
+              </Text>
+              <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                We'll send you a verification code
+              </Text>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: theme.textSecondary }]}>
-            Need help?{" "}
-            <Text
-              style={{ color: theme.primary, fontWeight: "600" }}
-              onPress={() => router.push("/help-support")}
-            >
-              Contact Support
-            </Text>
-          </Text>
+              {/* Phone Input */}
+              <View
+                style={[
+                  styles.phoneInputContainer,
+                  { backgroundColor: theme.card },
+                ]}
+              >
+                <View style={styles.countryCode}>
+                  <Text style={[styles.countryCodeText, { color: theme.text }]}>
+                    🇮🇳
+                  </Text>
+                  <Text style={[styles.countryCodeText, { color: theme.text }]}>
+                    +91
+                  </Text>
+                </View>
+                <TextInput
+                  style={[styles.phoneInput, { color: theme.text }]}
+                  placeholder="9876543210"
+                  placeholderTextColor={theme.textSecondary}
+                  keyboardType="number-pad"
+                  value={phoneNumber}
+                  onChangeText={(text) => setPhoneNumber(formatPhoneNumber(text))}
+                  maxLength={10}
+                  autoFocus
+                />
+              </View>
+
+              {/* Continue Button */}
+              <TouchableOpacity
+                style={[
+                  styles.continueButton,
+                  {
+                    backgroundColor:
+                      phoneNumber.length === 10 ? theme.primary : theme.card,
+                    marginTop: 'auto', // Push to bottom of form container
+                    marginBottom: 20
+                  },
+                ]}
+                onPress={handleSendOTP}
+                disabled={phoneNumber.length !== 10 || isLoading}
+              >
+                  {isLoading ? (
+                  <ActivityIndicator color="#FFF" />
+                  ) : (
+                  <Text
+                      style={[
+                      styles.continueButtonText,
+                      {
+                          color:
+                          phoneNumber.length === 10 ? "#FFF" : theme.textSecondary,
+                      },
+                      ]}
+                  >
+                      Send OTP
+                  </Text>
+                  )}
+              </TouchableOpacity>
+
+              {/* Terms */}
+              <Text style={[styles.termsText, { color: theme.textSecondary }]}>
+                By continuing, you agree to our{" "}
+                <Text style={{ color: theme.primary }}>Terms of Service</Text> and{" "}
+                <Text style={{ color: theme.primary }}>Privacy Policy</Text>
+              </Text>
+            </View>
+
+            {/* Footer - Only show if keyboard is hidden or handle with KeyboardAvoidingView automatically */}
+            <View style={styles.footer}>
+              <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+                Need help?{" "}
+                <Text
+                  style={{ color: theme.primary, fontWeight: "600" }}
+                  onPress={() => router.push("/help-support")}
+                >
+                  Contact Support
+                </Text>
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
+      </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   );
 }

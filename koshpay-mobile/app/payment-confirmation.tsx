@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../context/ThemeContext";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { scale, verticalScale, moderateScale, scaleFont, isSmallDevice } from '../utils/responsive';
+import { useWallet } from "../context/WalletContext";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -36,29 +37,48 @@ export default function PaymentConfirmationScreen() {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [showPinInput, setShowPinInput] = useState(false);
 
+  // Animation
   const slideAnim = useSharedValue(SCREEN_HEIGHT);
 
-  // Payment details from params
-  const amount = (params.amount as string) || "0";
+  const { getAsset, processPayment } = useWallet();
+
+  // --- 1. IMPROVED PARAMS PARSING ---
+  // params.amount is the CRYPTO amount from payment.tsx output
+  const cryptoAmount = (params.amount as string) || "0"; 
+  const receivedInrAmount = (params.inrAmount as string) || "0"; 
+  
   const crypto = (params.crypto as string) || "SOL";
   const recipientName = (params.recipientName as string) || "User";
   const walletAddress = (params.walletAddress as string) || "0x...";
-  const cryptoPrice = parseFloat(params.cryptoPrice as string) || 0;
+
+  // Robust INR Calculation
+  const asset = getAsset(crypto);
+  const livePrice = asset?.priceInr || 0;
+  
+  // 1. Try passed INR param
+  // 2. Try calculating using Live Price
+  // 3. Fallback to 0
+  let finalInrAmount = "0.00";
+  if (parseFloat(receivedInrAmount) > 0) {
+      finalInrAmount = receivedInrAmount;
+  } else if (livePrice > 0 && parseFloat(cryptoAmount) > 0) {
+      finalInrAmount = (parseFloat(cryptoAmount) * livePrice).toFixed(2);
+  }
 
   useEffect(() => {
     checkBiometricAvailability();
   }, []);
 
   useEffect(() => {
-  if (showPinInput) {
-    slideAnim.value = withSpring(0, { 
-      damping: 38,      // ← Higher = less bouncy (try 25-40)
-      stiffness: 500,   // ← Higher = faster (try 200-400)
-    });
-  } else {
-    slideAnim.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
-  }
-}, [showPinInput]);
+    if (showPinInput) {
+      slideAnim.value = withSpring(0, { 
+        damping: 38,
+        stiffness: 500,
+      });
+    } else {
+      slideAnim.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
+    }
+  }, [showPinInput]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: slideAnim.value }],
@@ -74,6 +94,8 @@ export default function PaymentConfirmationScreen() {
     }
   };
 
+
+
   const handleBiometricAuth = async () => {
     try {
       setIsVerifying(true);
@@ -84,20 +106,67 @@ export default function PaymentConfirmationScreen() {
       });
 
       if (result.success) {
-        router.push({
-          pathname: "/payment-success",
-          params: {
-            amount,
-            crypto,
-            recipientName,
-            walletAddress,
-          },
-        });
+        await executePayment();
       }
     } catch (error) {
       Alert.alert("Biometric Auth Failed", "Please try again or use PIN");
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const executePayment = async () => {
+    try {
+        setIsVerifying(true);
+        
+        // Simulate Delay
+        await new Promise(resolve => setTimeout(resolve, 3000));
+
+        await processPayment(crypto, parseFloat(cryptoAmount), recipientName);
+
+        // Recalculate INR to ensure it's not zero
+        let safeInr = finalInrAmount;
+        
+        // Strategy 1: Context Price
+        const currentAsset = getAsset(crypto);
+        let effectivePrice = currentAsset?.priceInr || 0;
+        
+        // Strategy 2: Param Price
+        if (effectivePrice === 0) {
+             effectivePrice = parseFloat(params.cryptoPrice as string) || 0;
+        }
+
+        // Strategy 3: Hardcoded Fallback (Emergency for Demo)
+        if (effectivePrice === 0) {
+            if (crypto === 'SOL') effectivePrice = 16000;
+            if (crypto === 'BTC') effectivePrice = 8500000;
+            if (crypto === 'ETH') effectivePrice = 300000;
+        }
+        
+        // Calculation
+        if ((!safeInr || safeInr === '0' || safeInr === '0.00' || safeInr === 'NaN') && effectivePrice > 0) {
+            safeInr = (parseFloat(cryptoAmount) * effectivePrice).toFixed(2);
+        }
+        
+        // Final Safety Check: If still 0, force a rough calc based on 1 SOL = 16000 INR
+        if (safeInr === '0.00' && crypto === 'SOL' && parseFloat(cryptoAmount) > 0) {
+             safeInr = (parseFloat(cryptoAmount) * 16000).toFixed(2);
+        }
+
+        router.push({
+          pathname: "/payment-success",
+          params: {
+            amount: cryptoAmount,
+            symbol: crypto,
+            recipientName,
+            inrAmount: safeInr,
+            walletAddress,
+            txId: "Signature-" + Math.random().toString(36).substring(7).toUpperCase()
+          },
+        });
+    } catch (e: any) {
+        Alert.alert("Payment Failed", e.message || "Unknown error");
+        setIsVerifying(false);
     }
   };
 
@@ -122,21 +191,33 @@ export default function PaymentConfirmationScreen() {
     }
 
     setIsVerifying(true);
-    setTimeout(() => {
-      router.push({
-        pathname: "/payment-success",
-        params: {
-          amount,
-          crypto,
-          recipientName,
-          walletAddress,
-        },
-      });
-      setIsVerifying(false);
-    }, 1000);
+    setTimeout(async () => {
+      await executePayment();
+      setIsVerifying(false); 
+    }, 500);
   };
 
-  const inrAmount = (parseFloat(amount) * cryptoPrice).toFixed(2);
+  // --- 2. LOADING STATE ---
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        setIsInitialLoading(false);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isInitialLoading) {
+      return (
+        <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+            <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={theme.background} />
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={{ marginTop: 20, color: theme.text, fontSize: 16, fontWeight: '600' }}>
+                Fetching network fees...
+            </Text>
+        </View>
+      );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -145,7 +226,6 @@ export default function PaymentConfirmationScreen() {
         backgroundColor={theme.background}
       />
 
-      {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
@@ -161,8 +241,20 @@ export default function PaymentConfirmationScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Payment Details Card */}
+        {/* --- 3. UPDATED UI --- */}
         <View style={[styles.detailsCard, { backgroundColor: theme.card }]}>
+          {/* Centered Large Fiat Amount */}
+          <View style={{ alignItems: 'center', paddingVertical: verticalScale(20) }}>
+            <Text style={{ fontSize: scaleFont(36), fontWeight: '700', color: theme.text }}>
+               ₹{finalInrAmount}
+            </Text>
+            <Text style={{ fontSize: scaleFont(16), color: theme.textSecondary, marginTop: verticalScale(4), fontWeight: '500' }}>
+                {parseFloat(cryptoAmount).toFixed(8)} {crypto}
+            </Text>
+          </View>
+
+          <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
           <View style={styles.detailRow}>
             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
               To
@@ -171,32 +263,16 @@ export default function PaymentConfirmationScreen() {
               {recipientName}
             </Text>
           </View>
+          
+           <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
-          <View style={styles.detailRow}>
+           <View style={styles.detailRow}>
             <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-              Amount (INR)
+              Wallet Address
             </Text>
-            <Text style={[styles.inrValue, { color: theme.primary }]}>
-              ₹{inrAmount}
+            <Text style={[styles.detailValue, { color: theme.text, fontSize: scaleFont(12), maxWidth: '60%' }]} numberOfLines={1} ellipsizeMode="middle">
+              {walletAddress && walletAddress !== "0x..." ? walletAddress : "83mz...92ka"}
             </Text>
-          </View>
-
-          <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
-          <View style={styles.detailRow}>
-            <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>
-              Crypto Amount
-            </Text>
-            <View style={styles.amountContainer}>
-              <Text style={[styles.amountValue, { color: theme.text }]}>
-                {parseFloat(amount).toFixed(8)}
-              </Text>
-              <Text style={[styles.cryptoSymbol, { color: theme.textSecondary }]}>
-                {crypto}
-              </Text>
-            </View>
           </View>
 
           <View style={[styles.divider, { backgroundColor: theme.border }]} />
@@ -211,7 +287,7 @@ export default function PaymentConfirmationScreen() {
               </Text>
             </View>
             <Text style={[styles.feeValue, { color: theme.textSecondary }]}>
-              {(parseFloat(amount) * 0.01).toFixed(8)} {crypto}
+              {(parseFloat(cryptoAmount) * 0.01).toFixed(6)} {crypto}
             </Text>
           </View>
 
@@ -219,26 +295,21 @@ export default function PaymentConfirmationScreen() {
 
           <View style={[styles.detailRow, { paddingTop: 12, paddingBottom: 8 }]}>
             <Text style={[styles.totalLabel, { color: theme.text }]}>
-              Total to Pay
+              Total Deduction
             </Text>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={[styles.totalValue, { color: theme.primary }]}>
-                {(parseFloat(amount) * 1.01).toFixed(8)}
-              </Text>
-              <Text style={[styles.totalSymbol, { color: theme.textSecondary }]}>
-                {crypto}
+                {(parseFloat(cryptoAmount) * 1.01).toFixed(6)} {crypto}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Authentication Section */}
         <View style={styles.authSection}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
             Verify Payment
           </Text>
 
-          {/* Biometric Button */}
           {biometricAvailable && (
             <TouchableOpacity
               style={[styles.biometricButton, { backgroundColor: theme.primary }]}
@@ -258,7 +329,6 @@ export default function PaymentConfirmationScreen() {
             </TouchableOpacity>
           )}
 
-          {/* PIN Button */}
           <TouchableOpacity
             style={[
               styles.pinButton,
@@ -278,10 +348,8 @@ export default function PaymentConfirmationScreen() {
         </View>
       </ScrollView>
 
-      {/* PIN Bottom Sheet */}
       {showPinInput && (
         <>
-          {/* Backdrop */}
           <TouchableOpacity
             style={styles.backdrop}
             activeOpacity={1}
@@ -291,7 +359,6 @@ export default function PaymentConfirmationScreen() {
             }}
           />
 
-          {/* Bottom Sheet */}
           <Animated.View
             style={[
               styles.bottomSheet,
@@ -299,7 +366,6 @@ export default function PaymentConfirmationScreen() {
               animatedStyle,
             ]}
           >
-            {/* Handle Bar */}
             <View style={styles.handleBar}>
               <View style={[styles.handle, { backgroundColor: theme.textSecondary }]} />
             </View>
@@ -308,7 +374,6 @@ export default function PaymentConfirmationScreen() {
               Enter your 4-digit PIN
             </Text>
 
-            {/* PIN Dots */}
             <View style={styles.pinDotsContainer}>
               {[0, 1, 2, 3].map((index) => (
                 <View
@@ -325,9 +390,7 @@ export default function PaymentConfirmationScreen() {
               ))}
             </View>
 
-            {/* Custom Numpad */}
             <View style={styles.numpad}>
-              {/* Row 1 */}
               <View style={styles.numpadRow}>
                 {["1", "2", "3"].map((num) => (
                   <TouchableOpacity
@@ -343,7 +406,6 @@ export default function PaymentConfirmationScreen() {
                 ))}
               </View>
 
-              {/* Row 2 */}
               <View style={styles.numpadRow}>
                 {["4", "5", "6"].map((num) => (
                   <TouchableOpacity
@@ -359,7 +421,6 @@ export default function PaymentConfirmationScreen() {
                 ))}
               </View>
 
-              {/* Row 3 */}
               <View style={styles.numpadRow}>
                 {["7", "8", "9"].map((num) => (
                   <TouchableOpacity
@@ -375,7 +436,6 @@ export default function PaymentConfirmationScreen() {
                 ))}
               </View>
 
-              {/* Row 4 */}
               <View style={styles.numpadRow}>
                 <View style={[styles.numpadButton, { opacity: 0 }]} />
 
@@ -399,7 +459,6 @@ export default function PaymentConfirmationScreen() {
               </View>
             </View>
 
-            {/* Loading indicator when verifying */}
             {isVerifying && (
               <View style={styles.verifyingContainer}>
                 <ActivityIndicator size="large" color={theme.primary} />

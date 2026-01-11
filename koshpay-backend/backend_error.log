@@ -1,0 +1,7 @@
+2025-12-17T16:24:28.160Z - Wallet Route Error: invalid input syntax for type uuid: "1"
+error: invalid input syntax for type uuid: "1"
+    at /Applications/My Mac/Development/Projects/KoshPay/koshpay-backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async getWalletByUserId (/Applications/My Mac/Development/Projects/KoshPay/koshpay-backend/models/Wallets.js:58:15)
+    at async /Applications/My Mac/Development/Projects/KoshPay/koshpay-backend/routes/walletRoutes.js:38:20
+
