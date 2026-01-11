@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { storage } from '../utils/storage';
 import { API_URL } from '../constants/config';
 import axios from 'axios';
 
@@ -33,14 +33,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUser = async () => {
     try {
-      const userData = await SecureStore.getItemAsync('user');
+      const userData = await storage.getItem('user');
       if (userData) {
         let parsedUser = JSON.parse(userData);
         // Migration: Fix legacy ID "1" to valid UUID for Backend
         if (parsedUser.id === '1') {
              console.log("Migrating legacy user ID '1' to valid UUID");
              parsedUser.id = '553e789c-4b10-488b-b875-2c8f003f0533';
-             await SecureStore.setItemAsync('user', JSON.stringify(parsedUser));
+             await storage.setItem('user', JSON.stringify(parsedUser));
         }
         setUser(parsedUser);
       }
@@ -65,8 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
              // Ensure kycStatus matches frontend interface
              userData.kycStatus = 'approved'; 
              setUser(userData);
-             await SecureStore.setItemAsync('user', JSON.stringify(userData));
-             await SecureStore.setItemAsync('authToken', token);
+             await storage.setItem('user', JSON.stringify(userData));
+             await storage.setItem('authToken', token);
              return;
           }
       }
@@ -80,8 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (token && userData) {
           setUser(userData);
-          await SecureStore.setItemAsync('user', JSON.stringify(userData));
-          await SecureStore.setItemAsync('authToken', token);
+          await storage.setItem('user', JSON.stringify(userData));
+          await storage.setItem('authToken', token);
       } else {
         throw new Error("Invalid response from server");
       }
@@ -93,14 +93,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     setUser(null);
-    await SecureStore.deleteItemAsync('user');
+    await storage.deleteItem('user');
   };
 
   const updateKYCStatus = (status: User['kycStatus']) => {
     if (user) {
       const updatedUser = { ...user, kycStatus: status };
       setUser(updatedUser);
-      SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
+      storage.setItem('user', JSON.stringify(updatedUser));
     }
   };
 

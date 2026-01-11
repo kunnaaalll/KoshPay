@@ -94,6 +94,96 @@ export default function PhoneLoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
+      {Platform.OS === "web" ? (
+        <View style={{ flex: 1 }}>
+          <StatusBar
+            barStyle={isDarkMode ? "light-content" : "dark-content"}
+            backgroundColor={theme.background}
+          />
+          <View style={[styles.content, { paddingTop: insets.top + 20 }]}>
+             {/* Header */}
+             <View style={styles.header}>
+               {/* ... (Same Header Code repeated or refactored) ... */}
+               <View
+                 style={[
+                   styles.logoContainer,
+                   { backgroundColor: theme.primary + "20" },
+                 ]}
+               >
+                 <Ionicons name="wallet" size={48} color={theme.primary} />
+               </View>
+               <Text style={[styles.appName, { color: theme.text }]}>KoshPay</Text>
+               <Text style={[styles.tagline, { color: theme.textSecondary }]}>
+                 Secure Crypto Payments
+               </Text>
+             </View>
+
+             <View style={styles.formContainer}>
+                <Text style={[styles.title, { color: theme.text }]}>
+                  Enter your phone number
+                </Text>
+                <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+                  We'll send you a verification code
+                </Text>
+                
+                <View style={[styles.phoneInputContainer, { backgroundColor: theme.card }]}>
+                  <View style={styles.countryCode}>
+                    <Text style={[styles.countryCodeText, { color: theme.text }]}>🇮🇳</Text>
+                    <Text style={[styles.countryCodeText, { color: theme.text }]}>+91</Text>
+                  </View>
+                  <TextInput
+                    style={[styles.phoneInput, { color: theme.text }]}
+                    placeholder="9876543210"
+                    placeholderTextColor={theme.textSecondary}
+                    keyboardType="number-pad"
+                    value={phoneNumber}
+                    onChangeText={(text) => setPhoneNumber(formatPhoneNumber(text))}
+                    maxLength={10}
+                    autoFocus
+                  />
+                </View>
+
+                {/* Continue Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.continueButton,
+                    {
+                      backgroundColor: phoneNumber.length === 10 ? theme.primary : theme.card,
+                      marginTop: 'auto',
+                      marginBottom: 20
+                    },
+                  ]}
+                  onPress={handleSendOTP}
+                  disabled={phoneNumber.length !== 10 || isLoading}
+                >
+                    {isLoading ? (
+                    <ActivityIndicator color="#FFF" />
+                    ) : (
+                    <Text style={[styles.continueButtonText, { color: phoneNumber.length === 10 ? "#FFF" : theme.textSecondary }]}>
+                        Send OTP
+                    </Text>
+                    )}
+                </TouchableOpacity>
+
+                {/* Terms */}
+                <Text style={[styles.termsText, { color: theme.textSecondary }]}>
+                  By continuing, you agree to our{" "}
+                  <Text style={{ color: theme.primary }}>Terms of Service</Text> and{" "}
+                  <Text style={{ color: theme.primary }}>Privacy Policy</Text>
+                </Text>
+             </View>
+
+             <View style={styles.footer}>
+                <Text style={[styles.footerText, { color: theme.textSecondary }]}>
+                  Need help?{" "}
+                  <Text style={{ color: theme.primary, fontWeight: "600" }} onPress={() => router.push("/help-support")}>
+                    Contact Support
+                  </Text>
+                </Text>
+             </View>
+          </View>
+        </View>
+      ) : (
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={{ flex: 1 }}>
           <StatusBar
@@ -208,6 +298,7 @@ export default function PhoneLoginScreen() {
           </View>
         </View>
       </TouchableWithoutFeedback>
+      )}
     </KeyboardAvoidingView>
   );
 }
