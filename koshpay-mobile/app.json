@@ -76,7 +76,6 @@
           "faceIDPermission": "Allow $(KoshPay) to use Face ID to secure your account."
         }
       ],
-      "expo-barcode-scanner",
       "expo-secure-store",
       "expo-web-browser"
     ],
