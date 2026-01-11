@@ -9,7 +9,7 @@ const cors = require('cors');
 const jwtSecret = process.env.JWT_SECRET;
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3001;
 
 //middlewares
 app.use(cors());
