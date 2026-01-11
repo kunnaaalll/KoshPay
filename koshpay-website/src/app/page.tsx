@@ -86,19 +86,22 @@ export default function Home() {
             className="flex flex-col sm:flex-row gap-4"
           >
             {os === "android" && (
-              <a 
-                href="/download/koshpay.apk" // Placeholder path
-                className="group flex items-center justify-center gap-3 bg-white text-black px-8 py-4 rounded-full font-semibold hover:bg-gray-200 transition-all hover:scale-105"
-              >
-                <Download className="w-5 h-5" />
-                <span>Download APK</span>
-              </a>
+                  <a 
+                    href="https://eu-central-3cf672d5.fileport.io/get/WAB_1W3kCyvwOPxc8O94rwGnynVebazR8EqKP1LQgqnXWZDEB6wYXXTHRtXksumJg-JT6kE2xMWkc2HFtT0Cq4lLgevszPQ0nxi_SAsJ7BxxEy1YPV4J1U5sdum33gCjLTKEoXSpUhrTew5erdx44pZxa8Igs4UXChaxzlepd2nCvpehSE1N7AMbqcrbtDkxhZhZybN3vmx4TRTlhl3gndT40DzWMEiCSW9eYKO-tye8Snkx94FwHBuAXY3jLVqAnEUC_gylEA-PcktkZrwIbL5zxyIfkMIu8YGhLLfKKEOM3f2-iXjzCpKc_mRTetczBEJEJ8nnAfZY4k15Xj5-Ur9FhCul_Z_5MsTiCzThE3wbvJ5kr2aZtAOwFbIN7SknH3TJxrkgGCHrzgbmgoMrtKzAyfGArGExN7kMpXIBgdL5kktlixKVxYEeK1peXpZ9d2z65LTELfsKBxkXXBrhytoP0txqjAvTwHMasZ-nFD4RJ1-jP0zc2Tr1nj6VM0pqkJ1-NpHGDD10EANK7bOrsVFMYwY-ceayLjeVYLtQUL1g" 
+                    download="koshpay.apk"
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="group flex items-center justify-center gap-3 bg-white text-black px-8 py-4 rounded-full font-semibold hover:bg-gray-200 transition-all hover:scale-105"
+                  >
+                    <Download className="w-5 h-5" />
+                    <span>Download APK</span>
+                  </a>
             )}
 
             {os === "ios" && (
                <div className="flex flex-col gap-4">
                   <a 
-                    href="https://koshpay-mobile.vercel.app" // Placeholder for your PWA URL
+                    href="https://kosh-pay.vercel.app" 
                     className="flex items-center justify-center gap-3 bg-white text-black px-8 py-4 rounded-full font-semibold hover:bg-gray-200 transition-all hover:scale-105"
                   >
                     <Globe className="w-5 h-5" />

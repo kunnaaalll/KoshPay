@@ -186,13 +186,16 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       // ... mapping logic ...
       const solBalance = Number(walletData.balance);
-      const updatedAssets = INITIAL_ASSETS.map(asset => {
-        if (asset.symbol === 'SOL') {
-          return { ...asset, balance: solBalance };
-        }
-        return { ...asset, balance: 0 }; 
+      setAssets(prevAssets => {
+          return prevAssets.map(asset => {
+              if (asset.symbol === 'SOL') {
+                  const solPrice = asset.priceInr; // Keep current live price
+                  return { ...asset, balance: solBalance, priceInr: solPrice };
+              }
+              // For others, keep existing state (balance 0, live price)
+              return { ...asset, balance: 0 }; 
+          });
       });
-      setAssets(updatedAssets);
 
       const mappedTransactions: Transaction[] = walletData.transactions.map((tx: any) => ({
         id: tx.reference_id,

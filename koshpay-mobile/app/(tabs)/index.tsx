@@ -92,26 +92,29 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Header with Search - Theme Toggle Removed */}
-        <View style={styles.header}>
-          <SearchBar theme={theme} />
-          
-          {/* <TouchableOpacity
-            style={[styles.profileIcon, { backgroundColor: theme.card }]}
-            onPress={() => router.push("/profile")}
-          >
-            <Ionicons name="person" size={20} color={theme.textSecondary} />
-          </TouchableOpacity> */}
+        {/* Header with Search */}
+        <View style={styles.headerContainer}>
+           <View style={styles.brandContainer}>
+              <View style={styles.logoCircle}>
+                <Ionicons name="wallet" size={20} color="#FFF" />
+              </View>
+              <Text style={[styles.brandName, { color: theme.text }]}>KoshPay</Text>
+           </View>
 
-          <TouchableOpacity
-            onPress={() => router.push("/notifications")}
-            style={styles.notificationButton}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={24}
-              color={theme.text}
-            />
-          </TouchableOpacity>
+           <TouchableOpacity
+             onPress={() => router.push("/notifications")}
+             style={styles.notificationButton}
+           >
+             <Ionicons
+               name="notifications-outline"
+               size={24}
+               color={theme.text}
+             />
+           </TouchableOpacity>
+        </View>
+
+        <View style={styles.searchContainer}>
+          <SearchBar theme={theme} />
         </View>
 
         {/* Advertisement Banner */}
@@ -449,7 +452,38 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: verticalScale(20),
   },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: scale(16),
+    paddingTop: verticalScale(16),
+    paddingBottom: verticalScale(8),
+  },
+  brandContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: scale(10),
+  },
+  logoCircle: {
+    width: scale(36),
+    height: scale(36),
+    borderRadius: scale(18),
+    backgroundColor: "#2563EB", // Primary
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  brandName: {
+    fontSize: scaleFont(22),
+    fontWeight: "800",
+    letterSpacing: -0.5,
+  },
+  searchContainer: {
+    paddingHorizontal: scale(16),
+    paddingBottom: verticalScale(12),
+  },
   header: {
+    // Legacy style kept just in case but likely unused now
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: scale(16),

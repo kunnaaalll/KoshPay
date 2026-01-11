@@ -183,8 +183,10 @@ export default function OTPVerificationScreen() {
               { backgroundColor: theme.primary + "20" },
             ]}
           >
-            <Ionicons name="lock-closed" size={40} color={theme.primary} />
+           {/* Use Wallet Icon for Branding */}
+            <Ionicons name="wallet" size={40} color={theme.primary} />
           </View>
+          <Text style={{ fontSize: 20, fontWeight: '700', marginTop: 10, color: theme.text }}>KoshPay</Text>
         </View>
 
         {/* Text */}
