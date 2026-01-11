@@ -97,7 +97,16 @@ export default function Home() {
 
             {os === "ios" && (
                <div className="flex flex-col gap-4">
+                  <a 
+                    href="https://koshpay-mobile.vercel.app" // Placeholder for your PWA URL
+                    className="flex items-center justify-center gap-3 bg-white text-black px-8 py-4 rounded-full font-semibold hover:bg-gray-200 transition-all hover:scale-105"
+                  >
+                    <Globe className="w-5 h-5" />
+                    <span>Open Web App</span>
+                  </a>
+                  
                   <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-xl max-w-sm">
+                    {/* ... instructions ... */}
                     <div className="flex items-start gap-4">
                        <div className="p-2 bg-zinc-800 rounded-lg">
                           <Share className="w-6 h-6 text-blue-500" />
@@ -105,7 +114,7 @@ export default function Home() {
                        <div>
                           <h3 className="font-semibold text-sm">Install on iOS</h3>
                           <p className="text-xs text-gray-400 mt-1">
-                            Tap the Share button below, then scroll down and tap <span className="text-white font-medium">"Add to Home Screen"</span>.
+                            Open the Web App, then tap Share and <span className="text-white font-medium">"Add to Home Screen"</span>.
                           </p>
                        </div>
                     </div>
