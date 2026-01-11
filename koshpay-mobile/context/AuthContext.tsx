@@ -54,14 +54,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (phone: string, otp: string) => {
     try {
       // --- DEMO LOGIN BYPASS ---
-      if (phone.replace(/\s/g, '') === '9999999999' && otp === '123456') {
+      // Normalize phone: remove spaces and +91 prefix
+      const normalizedPhone = phone.replace(/\s/g, '').replace(/^\+91/, '');
+      if (normalizedPhone === '9999999999' && otp === '123456') {
           console.log("Demo Login Detected");
           const demoUser: User = {
-              id: '553e789c-4b10-488b-b875-2c8f003f0533', // Fixed UUID for demo
+              id: '553e789c-4b10-488b-b875-2c8f003f0533', 
               phone: '9999999999',
               name: 'Demo User',
               koshpayId: 'demo@koshpay',
-              kycStatus: 'approved' // Skip KYC
+              kycStatus: 'approved' 
           };
           setUser(demoUser);
           await SecureStore.setItemAsync('user', JSON.stringify(demoUser));
