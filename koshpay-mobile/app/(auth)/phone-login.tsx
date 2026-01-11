@@ -219,6 +219,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: scale(24),
+    width: "100%",
+    maxWidth: 500, // Web center constraint
+    alignSelf: "center", // Center horizontally
   },
   header: {
     alignItems: "center",

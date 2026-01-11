@@ -6,12 +6,17 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BASE_WIDTH = 390;
 const BASE_HEIGHT = 844;
 
+// On Web, we want fixed mobile-like scaling, not blown up full screen
+const isWeb = Platform.OS === 'web';
+const CLAMP_WIDTH = isWeb ? Math.min(SCREEN_WIDTH, 450) : SCREEN_WIDTH;
+const CLAMP_HEIGHT = isWeb ? Math.min(SCREEN_HEIGHT, 900) : SCREEN_HEIGHT;
+
 export const scale = (size: number) => {
-  return (SCREEN_WIDTH / BASE_WIDTH) * size;
+  return (CLAMP_WIDTH / BASE_WIDTH) * size;
 };
 
 export const verticalScale = (size: number) => {
-  return (SCREEN_HEIGHT / BASE_HEIGHT) * size;
+  return (CLAMP_HEIGHT / BASE_HEIGHT) * size;
 };
 
 export const moderateScale = (size: number, factor = 0.5) => {
