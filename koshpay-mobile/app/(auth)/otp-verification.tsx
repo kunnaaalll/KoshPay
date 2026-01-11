@@ -139,7 +139,14 @@ export default function OTPVerificationScreen() {
     try {
       await login(String(phone), code);
       setIsLoading(false);
-      router.replace("/kyc-basic-info");
+
+      // Check for Demo User to skip KYC navigation
+      const normalizedPhone = String(phone).replace(/\s/g, '').replace(/^\+91/, '');
+      if (normalizedPhone === '9999999999') {
+          router.replace("/(tabs)");
+      } else {
+          router.replace("/kyc-basic-info");
+      }
     } catch (error) {
       setIsLoading(false);
       Alert.alert("Error", String(error));

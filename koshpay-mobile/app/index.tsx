@@ -8,15 +8,22 @@ import { Camera } from 'expo-camera';
 export default function Index() {
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user, logout } = useAuth();
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     // Check navigation state is ready
     if (!rootNavigationState?.key) return;
+    
+    // FORCE LOGOUT LEGACY USER
+    if (user?.name === 'Kunal Parmar' || user?.name === 'Kunal') {
+        console.log("Legacy user detected. Forcing logout.");
+        logout();
+        return;
+    }
 
     checkPermissionsAndNavigate();
-  }, [rootNavigationState, isLoading, isAuthenticated]);
+  }, [rootNavigationState, isLoading, isAuthenticated, user]);
 
   const checkPermissionsAndNavigate = async () => {
     if (isLoading) return;
