@@ -40,6 +40,16 @@ export default function PhoneLoginScreen() {
     }
     setIsLoading(true);
 
+    // --- DEMO BYPASS ---
+    if (phoneNumber === '9999999999') {
+        setIsLoading(false);
+        router.push({
+          pathname: "/(auth)/otp-verification",
+          params: { phone: `+91${phoneNumber}` },
+        });
+        return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/auth/send-otp`, {
         method: "POST",
