@@ -122,7 +122,7 @@ const INITIAL_TRANSACTIONS: Transaction[] = [
 ];
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth(); // Get logout function
   const [assets, setAssets] = useState<Asset[]>(INITIAL_ASSETS);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [memoId, setMemoId] = useState<string | null>(null);
@@ -181,36 +181,36 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const walletData = res.data;
 
       setMemoId(walletData.memo_id);
-
-      // 2. Map Backend Data to Frontend Assets
-      // For MVP, Backend calls it 'balance' (SOL). Frontend expects Asset[].
-      // We will map the single backend balance to the SOL asset.
-      const solBalance = Number(walletData.balance);
       
+      // ... mapping logic ...
+      const solBalance = Number(walletData.balance);
       const updatedAssets = INITIAL_ASSETS.map(asset => {
         if (asset.symbol === 'SOL') {
           return { ...asset, balance: solBalance };
         }
-        return { ...asset, balance: 0 }; // Other assets 0 for now
+        return { ...asset, balance: 0 }; 
       });
       setAssets(updatedAssets);
 
-      // 3. Map Transactions
       const mappedTransactions: Transaction[] = walletData.transactions.map((tx: any) => ({
         id: tx.reference_id,
         type: tx.type === 'PAYMENT' ? 'PAYMENT' : 'DEPOSIT',
         amountCrypto: Number(tx.amount),
-        symbol: 'SOL', // All backend txs are SOL for now
-        amountInr: Number(tx.amount) * 15420, // Mock rate
+        symbol: 'SOL', 
+        amountInr: Number(tx.amount) * 15420, 
         recipient: tx.metadata?.recipient || (tx.type === 'DEPOSIT' ? 'Deposit' : 'External'),
         timestamp: new Date(tx.created_at),
         status: 'SUCCESS'
       }));
       setTransactions(mappedTransactions);
 
-    } catch (error) {
-        // If 404, maybe create? Or just log
+    } catch (error: any) {
         console.error("Error fetching wallet:", error);
+        // If wallet/user not found (404) or Unauthorized (401), force logout to fix data mismatch
+        if (error.response?.status === 404 || error.response?.status === 401) {
+            console.log("Invalid session/user detected. Logging out...");
+            logout();
+        }
     }
   };
 
