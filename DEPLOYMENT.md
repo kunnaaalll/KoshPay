@@ -25,7 +25,11 @@ The mobile app and website need the Backend to function.
     *   **Build Command**: `npm install`
     *   **Start Command**: `npm start` (This will run `node app.js`)
 3.  **Environment Variables**: Add these in Render Dashboard:
-    *   `DATABASE_URL`: Your PostgreSQL connection string (You can create a **PostgreSQL** database on Render first).
+    *   `DATABASE_URL`: Your PostgreSQL connection string.
+        *   **Free DB Options**:
+            *   [Neon.tech](https://neon.tech) (Recommended - Easiest)
+            *   [Supabase](https://supabase.com)
+            *   Simply create a project on one of these, copy the "Connection String", and paste it here.
     *   `JWT_SECRET`: A secure random string.
     *   `PORT`: `3001` (or let Render assign one).
 4.  **Copy URL**: Once deployed, copy your new API URL (e.g., `https://koshpay-backend.onrender.com`).
