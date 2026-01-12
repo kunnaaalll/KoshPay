@@ -1,67 +1,125 @@
-# Welcome to KoshPay 👋
+# KoshPay - The Future of Crypto Payments 🚀
 
-This is the full KoshPay project: a crypto-first wallet and swap platform with a React Native/Expo mobile app, Express.js backend, PostgreSQL database, and blockchain layer (BTC, ETH, Solana) designed for pooled deposits, in-app wallets, and UPI-powered on/off ramps.
+KoshPay is a revolutionary Fintech application that bridges the gap between traditional UPI payments and the world of Cryptocurrency. It offers a seamless, secure, and user-friendly experience for managing assets, making payments, and exploring the crypto economy.
 
-## Get started
+## 🌟 Key Features & How to Use
 
-1. Install Dependencies Start the services
+### 1. **Secure Authentication** 🔐
+   - **Phone Login**: Simple login using your mobile number.
+   - **OTP Verification**: Secure 6-digit OTP verification (Demo: `123456`).
+   - **KYC Integration**: Basic identity verification flow ensuring compliance.
 
-- Start the backend API (Express + PostgreSQL):
+### 2. **Custodial Crypto Wallet** 💼
+   - **Multi-Asset Support**: Manage SOL, BTC, ETH, and USDC in one place.
+   - **Real-Time Prices**: Live market rates powered by CoinGecko Integration.
+   - **Deposit & Withdraw**: Simulate adding funds to your wallet or withdrawing to bank accounts.
+   - **Usage**: Go to the **Wallet Tab** to view your portfolio breakdown and total balance in INR.
 
-  ```
-  cd koshpay-backend
-  npm install
-  npm run dev
-  ```
+### 3. **Seamless Payments** 💸
+   - **Scan & Pay**: Use the built-in QR Scanner to pay any KoshPay user or compatible endpoint.
+   - **P2P Transfers**: Send money directly to friends using their phone number or contacts.
+   - **Instant Transactions**: Fast and low-fee transactions on the Solana network (simulated/custodial).
 
-- Start the mobile app (Expo):
+### 4. **Progressive Web App (PWA) Support** 📱
+   - **Cross-Platform**: Works flawlessly on iOS and Android via the browser.
+   - **Zero Install**: Add to Home Screen for an app-like experience without the App Store.
+   - **Usage**: Visit the web app link, tap 'Share', and select 'Add to Home Screen'.
 
-  ```
-  cd koshpay-mobile
-  npm install
-  npx expo start
-  ```
+---
 
-Make sure your `.env` files are configured for:
+## 🚀 How to Use the Deployed App
 
-- Database (PostgreSQL) URL and credentials
-- Blockchain RPC endpoints / providers (BTC, ETH, Solana)
-- Payment/UPI providers (for example Paytm, Cashfree)
-- Any JWT/secret keys for auth and KYC providers
+**1. Access the Landing Page:**
+   - Visit our official website: [KoshPay Website](https://kosh-pay-gok3.vercel.app/) .
+   - Here you can learn more about the features and vision.
 
-In the Expo CLI output, you'll find options to open the app in a
+**2. For Android Users:**
+   - Click the **"Download APK"** button on the website.
+   - Install the `koshpay.apk` on your device.
+   - Login with the Demo Credentials:
+     - **Phone**: `9999999999`
+     - **OTP**: `123456`
 
-- [Development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+**3. For iOS Users (Web App):**
+   - Click **"Open Web App"** on the website.
+   - You will be redirected to the PWA: [https://kosh-pay.vercel.app/](https://kosh-pay.vercel.app)
+   - Tap the **Share Button** (Safari) -> **Add to Home Screen**.
+   - Launch "KoshPay" from your home screen for the best experience.
 
-You can start developing the mobile UI by editing the files inside the **koshpay-mobile/app** directory (file-based routing), and backend logic inside **koshpay-backend/src**.
+---
 
-## Get A Fresh Project
+## 🛠️ How to Run Locally
 
-When you want to reset only the Expo app starter code and keep the backend as-is, from `koshpay-mobile` run:
+Follow these steps to set up the entire KoshPay stack (Backend, Mobile/Web App, and Website) on your local machine.
 
-This command will move the Expo starter code to the **app-example** directory and create a blank **app** directory where you can keep building the KoshPay mobile experience on top of your existing backend and infrastructure.
+### Prerequisites
+- Node.js (v18 or higher)
+- npm or yarn
+- PostgreSQL (for Backend Database)
+- Expo Go App (on your physical mobile device)
 
-For backend refactors, you can create new feature modules (for example `src/modules/wallet`, `src/modules/swap`, `src/modules/upi`) while keeping shared config in `src/config` and `src/database`.
+### 1. Backend Setup ⚙️
+The backend powers the custodial wallet and user management.
 
-## Learn more
+```bash
+# Navigate to backend directory
+cd koshpay-backend
 
-To learn more about the technologies used in KoshPay, check out:
+# Install dependencies
+npm install
 
-- [Expo documentation](https://docs.expo.dev/): For the React Native/Expo mobile app, routing, and API routes.  
-- [Express.js guide](https://expressjs.com/): For backend routing, middleware, and API design.  
-- [PostgreSQL documentation](https://www.postgresql.org/docs/): For schema design, transactions, and ACID guarantees for wallet balances.  
-- [Solana docs](https://solana.com/docs) and [Ethereum docs](https://ethereum.org/developers/docs/): For blockchain integration and wallet logic.  
-- UPI/payments providers like [Cashfree Docs](https://docs.cashfree.com/) and [Paytm for Business](https://business.paytm.com/): For QR/UPI flows and payouts.  
+# Configure Environment
+# Create a .env file and add your database credentials & secrets:
+# DATABASE_URL="postgresql://user:password@localhost:5432/koshpay?schema=public"
+# JWT_SECRET="your_secret_key"
+# PORT=5000
 
-## Join the community
+# Start the Server
+npm start
+```
+*Server runs at `http://localhost:5000`*
 
-Join communities around the core technologies powering KoshPay.
+### 2. Mobile App (Expo) Setup 📱
+The customer-facing mobile application.
 
-- [Expo on GitHub](https://github.com/expo/expo): View the open source platform and contribute.  
-- [Node.js & Express community](https://github.com/expressjs/express): Learn and share backend patterns.  
-- [PostgreSQL community](https://www.postgresql.org/community/): Explore best practices for relational databases.  
-- [Solana Developers](https://solana.com/developers) and [Ethereum Developers](https://ethereum.org/developers/): Connect with blockchain developers.  
-- [Discord community for Expo](https://chat.expo.dev/): Chat with Expo users and ask questions.  
+```bash
+# Navigate to mobile directory
+cd koshpay-mobile
+
+# Install dependencies
+npm install
+
+# Start the Development Server
+npx expo start
+```
+- **Run on Android**: Press `a` in the terminal (requires Emulator).
+- **Run on iOS**: Press `i` in the terminal (requires Simulator).
+- **Run on Physical Device**: Scan the QR code using the **Expo Go** app.
+- **Run as PWA**: Press `w` to open in the browser.
+
+### 3. Website Setup 🌐
+The marketing landing page.
+
+```bash
+# Navigate to website directory
+cd koshpay-website
+
+# Install dependencies
+npm install
+
+# Start the Development Server
+npm run dev
+```
+*Website runs at `http://localhost:3000`*
+
+---
+
+## 📂 Project Structure
+
+- **`koshpay-backend/`**: Node.js/Express server with PostgreSQL and Prisma. Handles wallet logic, transactions, and auth.
+- **`koshpay-mobile/`**: React Native (Expo) application. The core product offering Wallet, Scanner, and Payments.
+- **`koshpay-website/`**: Next.js landing page for user acquisition and app distribution.
+
+---
+
+Made with ❤️ by the KoshPay Team.
