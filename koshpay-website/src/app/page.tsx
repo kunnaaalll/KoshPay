@@ -87,7 +87,7 @@ export default function Home() {
           >
             {os === "android" && (
                   <a 
-                    href="https://eu-central-3cf672d5.fileport.io/get/WAB_1W3kCyvwOPxc8O94rwGnynVebazR8EqKP1LQgqnXWZDEB6wYXXTHRtXksumJg-JT6kE2xMWkc2HFtT0Cq4lLgevszPQ0nxi_SAsJ7BxxEy1YPV4J1U5sdum33gCjLTKEoXSpUhrTew5erdx44pZxa8Igs4UXChaxzlepd2nCvpehSE1N7AMbqcrbtDkxhZhZybN3vmx4TRTlhl3gndT40DzWMEiCSW9eYKO-tye8Snkx94FwHBuAXY3jLVqAnEUC_gylEA-PcktkZrwIbL5zxyIfkMIu8YGhLLfKKEOM3f2-iXjzCpKc_mRTetczBEJEJ8nnAfZY4k15Xj5-Ur9FhCul_Z_5MsTiCzThE3wbvJ5kr2aZtAOwFbIN7SknH3TJxrkgGCHrzgbmgoMrtKzAyfGArGExN7kMpXIBgdL5kktlixKVxYEeK1peXpZ9d2z65LTELfsKBxkXXBrhytoP0txqjAvTwHMasZ-nFD4RJ1-jP0zc2Tr1nj6VM0pqkJ1-NpHGDD10EANK7bOrsVFMYwY-ceayLjeVYLtQUL1g" 
+                    href="https://drive.usercontent.google.com/download?id=1ugTZ7hjZTFqscQTDrT_bmP8xI0DQfX0f&export=download&authuser=0&confirm=t&uuid=edced7a2-d363-41ea-84d9-6e9b017caef1&at=ANTm3cxiZqKb_LI4IW-kKMdtypR2%3A1768588261882" 
                     download="koshpay.apk"
                     target="_blank"
                     rel="noopener noreferrer" 
@@ -97,6 +97,7 @@ export default function Home() {
                     <span>Download APK</span>
                   </a>
             )}
+
 
             {os === "ios" && (
                <div className="flex flex-col gap-4">
