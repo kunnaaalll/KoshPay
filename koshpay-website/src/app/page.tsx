@@ -87,7 +87,7 @@ export default function Home() {
           >
             {os === "android" && (
                   <a 
-                    href="https://drive.usercontent.google.com/download?id=1ugTZ7hjZTFqscQTDrT_bmP8xI0DQfX0f&export=download&authuser=0&confirm=t&uuid=edced7a2-d363-41ea-84d9-6e9b017caef1&at=ANTm3cxiZqKb_LI4IW-kKMdtypR2%3A1768588261882" 
+                    href="https://www.dropbox.com/scl/fi/nisu7bsv7xt4tgsiyhwjq/Koshpay.apk?rlkey=3yvuhs65n5qrgame8c0ab0i7t&st=38fc00eh&dl=1" 
                     download="koshpay.apk"
                     target="_blank"
                     rel="noopener noreferrer" 

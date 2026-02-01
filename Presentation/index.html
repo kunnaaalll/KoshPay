@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>KoshPay - The Future of Payments</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Reveal.js Styles -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/theme/black.min.css" id="theme">
+    
+    <!-- Premium Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* KoshPay Brand Colors */
+            --neon-green: #14F195;  /* Solana Green */
+            --neon-purple: #9945FF; /* Solana Purple */
+            --deep-blue: #1565C0;   /* Trust Blue */
+            
+            /* Glassmorphism Variables */
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(20, 20, 35, 0.6); /* Slightly darker for better contrast */
+            --text-main: #ffffff;
+            --text-muted: #CBD5E1;
+        }
+
+        /* --- GLOBAL TYPOGRAPHY & LAYOUT --- */
+        body { 
+            font-family: 'Outfit', sans-serif !important; 
+            background-color: #050505;
+            overflow: hidden; 
+        }
+
+        .reveal { color: var(--text-main); }
+        
+        /* Headers use the Tech Font */
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+            font-family: 'Space Grotesk', sans-serif !important;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.4em;
+        }
+
+        .reveal p, .reveal li {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 300;
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 1.1rem; /* Responsive font size */
+        }
+
+        /* --- SPECIAL EFFECTS --- */
+
+        /* 1. The Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #ffffff 0%, var(--neon-green) 50%, var(--neon-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700 !important;
+            text-shadow: 0 0 40px rgba(20, 241, 149, 0.2);
+        }
+
+        /* 2. Premium Glass Cards */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            height: 100%; /* Fill container */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px) scale(1.01);
+            border-color: rgba(153, 69, 255, 0.3);
+            box-shadow: 0 30px 60px rgba(153, 69, 255, 0.15);
+        }
+
+        /* 3. Floating Phone Mockups - RESPONSIVE FIX */
+        .phone-container {
+            position: relative;
+            display: inline-block;
+            margin: 0 20px;
+            perspective: 1000px;
+        }
+
+        .phone-mockup {
+            border-radius: 35px;
+            border: 8px solid #2a2a2a;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            transition: transform 0.5s ease;
+            max-height: 60vh; /* Responsive height based on screen */
+            width: auto;      /* Maintain aspect ratio */
+            object-fit: cover;
+            background-color: #000;
+        }
+
+        .phone-container:hover .phone-mockup {
+            transform: rotateY(-5deg) rotateX(5deg) scale(1.05);
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 60px rgba(153, 69, 255, 0.3);
+        }
+
+        /* 4. Ambient Background Animation */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.25;
+            z-index: 0;
+            pointer-events: none;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .orb-1 { width: 60vw; height: 60vw; background: var(--neon-purple); top: -20%; left: -10%; }
+        .orb-2 { width: 50vw; height: 50vw; background: var(--neon-green); bottom: -10%; right: -5%; animation-delay: -5s; }
+        .orb-3 { width: 30vw; height: 30vw; background: var(--deep-blue); top: 40%; left: 40%; animation-delay: -10s; opacity: 0.15; }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 50px); }
+        }
+
+        /* --- LAYOUT UTILITIES - RESPONSIVE GRIDS --- */
+        .grid-3 { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 40px; 
+            width: 100%;
+            align-items: stretch;
+        }
+        
+        .grid-2 { 
+            display: grid; 
+            grid-template-columns: 1fr 0.8fr; /* Text takes more space */
+            gap: 60px; 
+            align-items: center; 
+            width: 100%;
+            height: 100%;
+        }
+        
+        .flex-center { 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-end; /* Align bottom of phones */
+            gap: 40px; 
+            width: 100%;
+        }
+        
+        .text-left { text-align: left; }
+        
+        .accent-green { color: var(--neon-green); font-weight: 600; }
+        .accent-purple { color: var(--neon-purple); font-weight: 600; }
+        .accent-blue { color: var(--deep-blue); font-weight: 600; }
+
+        .code-snippet {
+            font-family: 'Fira Code', monospace;
+            background: rgba(0,0,0,0.6);
+            padding: 30px;
+            border-radius: 12px;
+            border-left: 4px solid var(--neon-green);
+            font-size: 0.8rem;
+            color: #e0e0e0;
+            text-align: left;
+            line-height: 1.5;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Ensure slides use full height */
+        .reveal .slides section {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated Background -->
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+    <div class="ambient-orb orb-3"></div>
+
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- 1. INTRODUCTION (HERO) -->
+            <section data-auto-animate>
+                <div style="margin-bottom: 2rem;">
+                    <div style="display: inline-block; padding: 10px 25px; border: 1px solid var(--neon-green); border-radius: 50px; color: var(--neon-green); font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; background: rgba(20, 241, 149, 0.1);">
+                        MCA Semester I Project
+                    </div>
+                </div>
+                <h1 class="gradient-text" style="font-size: 7rem; line-height: 0.9; margin: 0;">KOSHPAY</h1>
+                <h3 style="font-weight: 300; font-size: 2rem; letter-spacing: 12px; opacity: 0.8; margin-top: 20px;">GLOBAL PAYMENT NETWORK</h3>
+                
+                <div class="glass-card" style="margin-top: 60px; display: inline-block; padding: 25px 60px; height: auto;">
+                    <p style="margin: 0; font-size: 1.5rem; color: white;">
+                        Bridging <span class="accent-purple">Crypto Liquidity</span> & <span class="accent-green">Fiat Rails</span>
+                    </p>
+                </div>
+                
+                <p style="margin-top: 60px; font-size: 1rem; opacity: 0.5;">Developed by Kunal Parmar (FPMCA037A)</p>
+            </section>
+
+            <!-- 2. THE PROBLEM (CONTEXT) -->
+            <section>
+                <div style="width: 100%; text-align: left; margin-bottom: 40px;">
+                    <h2>The <span class="accent-purple">Disconnect</span></h2>
+                </div>
+                <div class="grid-3">
+                    <div class="glass-card fragment fade-up">
+                        <div style="font-size: 4em; margin-bottom: 20px;">🚧</div>
+                        <h4>Walled Gardens</h4>
+                        <p>Crypto wallets (MetaMask) and Fiat apps (PhonePe) speak different languages. They cannot transact directly.</p>
+                    </div>
+                    <div class="glass-card fragment fade-up" data-fragment-index="1">
+                        <div style="font-size: 4em; margin-bottom: 20px;">⏱️</div>
+                        <h4>Slow Finality</h4>
+                        <p>Bitcoin takes 10+ mins to confirm. Retail payments require < 2 second settlement to be viable.</p>
+                    </div>
+                    <div class="glass-card fragment fade-up" data-fragment-index="2">
+                        <div style="font-size: 4em; margin-bottom: 20px;">💸</div>
+                        <h4>High Fees</h4>
+                        <p>Traditional cross-border rails and on-chain gas fees make micro-payments economically unviable.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. THE SOLUTION (PRODUCT OVERVIEW) -->
+            <section data-auto-animate>
+                <div class="grid-2">
+                    <div class="text-left">
+                        <h2 style="font-size: 3.5em; margin-bottom: 0.5em;">The <span class="gradient-text">Solution</span></h2>
+                        <p class="fragment fade-in" style="font-size: 1.4rem;">KoshPay is a hybrid payment rail that allows users to spend crypto instantly at any UPI merchant.</p>
+                        
+                        <div style="margin-top: 50px;">
+                            <div class="glass-card fragment fade-right" style="padding: 30px; margin-bottom: 20px; border-left: 6px solid var(--neon-green); height: auto;">
+                                <strong style="font-size: 1.2rem; display: block; margin-bottom: 10px;">⚡ Crypto Input</strong>
+                                <p style="margin:0;">Users pay using BTC, ETH, or SOL from their internal wallet.</p>
+                            </div>
+                            <div class="glass-card fragment fade-right" style="padding: 30px; margin-bottom: 20px; border-left: 6px solid var(--neon-purple); height: auto;">
+                                <strong style="font-size: 1.2rem; display: block; margin-bottom: 10px;">🔄 Fiat Output</strong>
+                                <p style="margin:0;">Merchants receive standard INR payments via UPI. No onboarding required.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="phone-container fragment fade-left" style="justify-self: center;">
+                        <!-- USING: ui_home.png -->
+                        <img class="phone-mockup" src="assets/ui_home.png" alt="KoshPay UI">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. THE USER EXPERIENCE (LIVE FLOW) -->
+            <section>
+                <h3 style="margin-bottom: 60px;">Seamless <span class="accent-green">Journey</span></h3>
+                <div class="flex-center">
+                    
+                    <!-- STEP 1 -->
+                    <div class="phone-container fragment fade-up">
+                        <img class="phone-mockup" src="assets/ui_home.png" style="height: 55vh;">
+                        <div style="margin-top: 25px;">
+                            <h5 style="margin:0;">1. Select</h5>
+                            <p style="font-size: 0.8rem;">Dashboard & Scan</p>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 3em; opacity: 0.3; padding-bottom: 100px;">➔</div>
+
+                    <!-- STEP 2 -->
+                    <div class="phone-container fragment fade-up" data-fragment-index="1">
+                        <img class="phone-mockup" src="assets/ui_pay.png" style="height: 60vh; border-color: var(--neon-green);">
+                        <div style="margin-top: 25px;">
+                            <h5 style="margin:0; color: var(--neon-green);">2. Pay</h5>
+                            <p style="font-size: 0.8rem;">Select Crypto & Confirm</p>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 3em; opacity: 0.3; padding-bottom: 100px;">➔</div>
+
+                    <!-- STEP 3 -->
+                    <div class="phone-container fragment fade-up" data-fragment-index="2">
+                        <img class="phone-mockup" src="assets/ui_success.png" style="height: 55vh;">
+                        <div style="margin-top: 25px;">
+                            <h5 style="margin:0;">3. Settle</h5>
+                            <p style="font-size: 0.8rem;">Merchant gets Fiat</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- 5. ARCHITECTURE (HOW IT WORKS) -->
+            <section>
+                <div class="grid-2">
+                    <div class="text-left">
+                        <h3 style="font-size: 3em;">System <span class="accent-purple">Architecture</span></h3>
+                        <p style="font-size: 1.3rem;">We utilize a custodial "Internal Ledger" model to achieve sub-second settlement speed.</p>
+                        <br>
+                        <div class="glass-card" style="padding: 30px; border-left: 6px solid var(--deep-blue); height: auto;">
+                            <h4 style="margin: 0 0 20px 0;">The "Dual-Rail" Engine</h4>
+                            <ul style="font-size: 1rem; margin-top: 10px; color: #ddd; list-style-type: none; padding-left: 0;">
+                                <li style="margin-bottom: 10px;">📥 <strong>Inbound:</strong> Blockchain listener monitors crypto deposits.</li>
+                                <li style="margin-bottom: 10px;">💾 <strong>Internal:</strong> Database updates user balance instantly.</li>
+                                <li>📤 <strong>Outbound:</strong> Node.js backend triggers Payout API for INR settlement.</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="glass-card" style="background: white; padding: 20px; align-items: center;">
+                        <!-- Safe fallback for diagram -->
+                        <img src="assets/arch_diagram.png" style="height: 500px; width: 100%; object-fit: contain;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:black; padding:40px; text-align:center; height:100%; display:flex; flex-direction:column; justify-content:center;\'><h2 style=\'color:black;\'>Architecture Diagram</h2><p style=\'color:#333; font-size:1.5rem;\'>Node.js API ↔ PostgreSQL ↔ Payout Service</p></div>'">
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. TECH STACK (ENGINEERING) -->
+            <section>
+                <h2 style="margin-bottom: 50px;">Technical <span class="accent-green">Implementation</span></h2>
+                <div class="glass-card" style="padding: 50px; width: 100%;">
+                    <div class="grid-3">
+                        <div style="border-right: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 3em; margin-bottom: 15px;">📱</div>
+                            <h4 style="color: var(--neon-green);">Frontend</h4>
+                            <ul style="font-size: 1rem; list-style: none; padding: 0; opacity: 0.8;">
+                                <li>React Native (Expo)</li>
+                                <li>TypeScript</li>
+                                <li>Reanimated UI</li>
+                            </ul>
+                        </div>
+                        <div style="border-right: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 3em; margin-bottom: 15px;">⚙️</div>
+                            <h4 style="color: var(--neon-purple);">Backend</h4>
+                            <ul style="font-size: 1rem; list-style: none; padding: 0; opacity: 0.8;">
+                                <li>Node.js / Express</li>
+                                <li>Payouts API Integration</li>
+                                <li>Solana Web3.js</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <div style="font-size: 3em; margin-bottom: 15px;">🗄️</div>
+                            <h4 style="color: #00C2FF;">Data Layer</h4>
+                            <ul style="font-size: 1rem; list-style: none; padding: 0; opacity: 0.8;">
+                                <li>PostgreSQL (Ledger)</li>
+                                <li>MongoDB (User Profiles)</li>
+                                <li>Redis (Caching)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. DATABASE SCHEMA -->
+            <section>
+                <div class="grid-2">
+                    <div class="text-left">
+                        <h3>Ledger <span class="accent-green">Schema</span></h3>
+                        <p style="font-size: 1.2rem;">A normalized PostgreSQL database design ensures zero financial errors and complete audit trails.</p>
+                        <br>
+                        <div class="code-snippet">
+                            <span style="color: #888">// Transaction Table Logic</span><br>
+                            const TransactionSchema = {<br>
+                            &nbsp;&nbsp;tx_id: <span style="color: var(--neon-green)">UUID_V4</span>,<br>
+                            &nbsp;&nbsp;user_id: <span style="color: var(--neon-green)">Foreign_Key</span>,<br>
+                            &nbsp;&nbsp;type: <span style="color: var(--neon-purple)">ENUM('PAYOUT_UPI', 'DEPOSIT')</span>,<br>
+                            &nbsp;&nbsp;status: <span style="color: var(--neon-purple)">ENUM('SUCCESS', 'PENDING')</span>,<br>
+                            &nbsp;&nbsp;crypto_amount: <span style="color: #00C2FF">Decimal(18, 8)</span>,<br>
+                            &nbsp;&nbsp;fiat_value_inr: <span style="color: #00C2FF">Decimal(10, 2)</span>,<br>
+                            &nbsp;&nbsp;payout_ref: <span style="color: #aaa">String</span><br>
+                            }
+                        </div>
+                    </div>
+                    <div class="glass-card" style="display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05);">
+                        <h1 style="font-size: 10em; margin: 0;">🐘</h1>
+                        <p>PostgreSQL</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. BUSINESS VIABILITY -->
+            <section>
+                <h2 class="gradient-text" style="margin-bottom: 50px;">Impact & Revenue</h2>
+                <div class="grid-3">
+                    <div class="glass-card">
+                        <h1 style="color: var(--neon-green); font-size: 5em; margin: 0;">1%</h1>
+                        <h4>Fee</h4>
+                        <p>Transaction Fee. Significantly lower than traditional 3% MDR.</p>
+                    </div>
+                    <div class="glass-card">
+                        <h1 style="color: var(--neon-purple); font-size: 5em; margin: 0;">2s</h1>
+                        <h4>Time</h4>
+                        <p>Settlement time. Cash flow is instant, not T+2 days.</p>
+                    </div>
+                    <div class="glass-card">
+                        <h1 style="color: #00C2FF; font-size: 5em; margin: 0;">B2B</h1>
+                        <h4>Scale</h4>
+                        <p>Premium API revenue from merchants automating crypto acceptance.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 9. CONCLUSION -->
+            <section>
+                <div class="glass-card" style="display: inline-block; padding: 80px 120px; height: auto;">
+                    <h1 class="gradient-text" style="font-size: 6em;">KOSHPAY</h1>
+                    <hr style="border-color: rgba(255,255,255,0.1); margin: 40px 0;">
+                    <p style="font-size: 1.5rem;">The bridge is built. The rails are ready.</p>
+                    <br>
+                    <div style="display: flex; justify-content: center; gap: 40px; font-size: 1rem; opacity: 0.7; margin-top: 40px;">
+                        <span>Kunal Parmar</span>
+                        <span>|</span>
+                        <span>MCA Semester I</span>
+                        <span>|</span>
+                        <span>2025-2026</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.5.0/reveal.min.js"></script>
+    <script>
+        Reveal.initialize({
+            // Force 1920x1080 resolution
+            width: 1920,
+            height: 1080,
+            margin: 0.05,
+            minScale: 0.2,
+            maxScale: 2.0,
+            
+            hash: true,
+            mouseWheel: true,
+            transition: 'convex',
+            backgroundTransition: 'zoom',
+            autoAnimate: true,
+            controls: true,
+            progress: true,
+            center: true,
+            display: 'flex'
+        });
+    </script>
+</body>
+</html>
